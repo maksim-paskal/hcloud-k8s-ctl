@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: csi-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: hcloud-volumes
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      nodeSelector:
+        beta.kubernetes.io/instance-type: cpx51
+      volumes:
+      - name: my-csi-volume
+        persistentVolumeClaim:
+          claimName: csi-pvc
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        resources:
+          limits:
+            memory: 100Mi
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - mountPath: "/data"
+          name: my-csi-volume
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-deployment
+  annotations:
+   load-balancer.hetzner.cloud/location: fsn1
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+  - protocol: TCP
+    port: 80
