@@ -1,0 +1,27 @@
+clusterName: k8s
+kubeConfigPath: /Users/home/.kube/hcloud
+hetznerToken: some-token-string
+ipRange: 10.0.0.0/16
+sshPrivateKey: /Users/home/.ssh/id_rsa
+sshPublicKey: /Users/home/.ssh/id_rsa.pub
+masterCount: 3
+masterServers:
+  namepattern: master-%d
+  servertype: cx21
+  image: ubuntu-20.04
+  datacenter: fsn1-dc14
+  labels:
+    role: master
+  waittimeinretry: 3s
+  retrytimelimit: 20
+masterLoadBalancer:
+  loadbalancertype: lb11
+  location: fsn1
+  listenport: 6443
+  destinationport: 6443
+  selector: role=master
+cliArgs:
+  loglevel: DEBUG
+  configpath: config.yaml
+  deletecluster: true
+  createcluster: false

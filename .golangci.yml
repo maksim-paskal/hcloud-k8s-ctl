@@ -1,0 +1,11 @@
+run:
+  timeout: 5m
+issues:
+  fix: true
+misspell:
+  locale: US
+linters:
+  enable-all: true
+  disable:
+  - exhaustivestruct
+  - wrapcheck
