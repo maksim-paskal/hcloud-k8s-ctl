@@ -35,7 +35,7 @@ and start application
 ```bash
 # create 3 instance with 1 load balancer
 # kubernetes autoscaler will create 1 worker node
-hcloud-k8s-ctl -action=delete
+hcloud-k8s-ctl -action=create
 ```
 all nodes in cluster initialized with official kubeadm - for all nodes use this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/common-install.sh) for master initializing this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/init-master.sh) 
 

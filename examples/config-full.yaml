@@ -1,9 +1,9 @@
 clusterName: k8s
-kubeConfigPath: /Users/home/.kube/hcloud
+kubeConfigPath: ~/.kube/hcloud
 hetznerToken: some-token-string
 ipRange: 10.0.0.0/16
-sshPrivateKey: /Users/home/.ssh/id_rsa
-sshPublicKey: /Users/home/.ssh/id_rsa.pub
+sshPrivateKey: ~/.ssh/id_rsa
+sshPublicKey: ~/.ssh/id_rsa.pub
 masterCount: 3
 masterServers:
   namepattern: master-%d

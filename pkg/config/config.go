@@ -18,7 +18,8 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
-	"path"
+	"os/user"
+	"path/filepath"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -80,14 +81,9 @@ func NewApplicationConfig() *ApplicationConfig {
 	return &ApplicationConfig{}
 }
 
-func (c *ApplicationConfig) defaultConfig() (Type, error) {
-	userHome, err := os.UserHomeDir()
-	if err != nil {
-		return Type{}, err
-	}
-
-	privateKey := path.Join(userHome, ".ssh/id_rsa")
-	kubeConfigPath := path.Join(userHome, ".kube/hcloud")
+func (c *ApplicationConfig) defaultConfig() Type {
+	privateKey := "~/.ssh/id_rsa"
+	kubeConfigPath := "~/.kube/hcloud"
 
 	serverLabels := make(map[string]string)
 	serverLabels["role"] = "master"
@@ -116,7 +112,7 @@ func (c *ApplicationConfig) defaultConfig() (Type, error) {
 			DestinationPort:  loadBalancerDefaultPort,
 			Selector:         "role=master",
 		},
-	}, nil
+	}
 }
 
 func (c *ApplicationConfig) Load() error {
@@ -125,10 +121,7 @@ func (c *ApplicationConfig) Load() error {
 		return err
 	}
 
-	c.config, err = c.defaultConfig()
-	if err != nil {
-		return err
-	}
+	c.config = c.defaultConfig()
 
 	if len(c.config.HetznerToken) == 0 {
 		auth, err := ioutil.ReadFile(".hcloudauth")
@@ -140,6 +133,21 @@ func (c *ApplicationConfig) Load() error {
 	}
 
 	err = yaml.Unmarshal(configByte, &c.config)
+	if err != nil {
+		return err
+	}
+
+	c.config.KubeConfigPath, err = c.expand(c.config.KubeConfigPath)
+	if err != nil {
+		return err
+	}
+
+	c.config.SSHPrivateKey, err = c.expand(c.config.SSHPrivateKey)
+	if err != nil {
+		return err
+	}
+
+	c.config.SSHPublicKey, err = c.expand(c.config.SSHPublicKey)
 	if err != nil {
 		return err
 	}
@@ -163,4 +171,17 @@ func (c *ApplicationConfig) String() string {
 	}
 
 	return string(out)
+}
+
+func (c *ApplicationConfig) expand(path string) (string, error) {
+	if len(path) == 0 || path[0] != '~' {
+		return path, nil
+	}
+
+	usr, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(usr.HomeDir, path[1:]), nil
 }
