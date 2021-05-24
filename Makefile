@@ -9,6 +9,7 @@ delete-cluster:
 	go run -race ./cmd -action=delete -log.level=DEBUG
 build:
 	@./scripts/build-all.sh
+	go mod tidy
 apply-yaml:
 	kubectl apply -f ./scripts
 apply-test:
