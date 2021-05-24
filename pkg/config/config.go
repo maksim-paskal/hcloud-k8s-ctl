@@ -26,21 +26,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type masterServersInitParams struct {
+	TarGz  string
+	Folder string
+}
+
 type cliArgs struct {
-	LogLevel             *string
-	ConfigPath           *string
-	Action               *string
-	DeleteBeforeCreation *bool
+	LogLevel   *string
+	ConfigPath *string
+	Action     *string
 }
 
 type masterServers struct {
-	NamePattern     string
-	ServerType      string
-	Image           string
-	Datacenter      string
-	Labels          map[string]string
-	WaitTimeInRetry time.Duration
-	RetryTimeLimit  int
+	NamePattern       string
+	ServerType        string
+	Image             string
+	Datacenter        string
+	Labels            map[string]string
+	WaitTimeInRetry   time.Duration
+	RetryTimeLimit    int
+	ServersInitParams masterServersInitParams
 }
 
 type masterLoadBalancer struct {
@@ -56,7 +61,6 @@ type Type struct {
 	KubeConfigPath     string             `yaml:"kubeConfigPath"`
 	HetznerToken       string             `yaml:"hetznerToken"`
 	IPRange            string             `yaml:"ipRange"`
-	IPRangeNet         *net.IPNet         `yaml:"ipRangeNet"`
 	SSHPrivateKey      string             `yaml:"sshPrivateKey"`
 	SSHPublicKey       string             `yaml:"sshPublicKey"`
 	MasterCount        int                `yaml:"masterCount"`
@@ -71,10 +75,9 @@ type ApplicationConfig struct {
 
 //nolint:gochecknoglobals
 var cliArguments = cliArgs{
-	LogLevel:             flag.String("log.level", "INFO", "logging level"),
-	ConfigPath:           flag.String("config", "config.yaml", "config path"),
-	Action:               flag.String("action", "create", "create|delete"),
-	DeleteBeforeCreation: flag.Bool("deleteBeforeCreation", false, "delete cluster before creation"),
+	LogLevel:   flag.String("log.level", "INFO", "logging level"),
+	ConfigPath: flag.String("config", "config.yaml", "config path"),
+	Action:     flag.String("action", "", "create|delete"),
 }
 
 func NewApplicationConfig() *ApplicationConfig {
@@ -104,6 +107,10 @@ func (c *ApplicationConfig) defaultConfig() Type {
 			Labels:          serverLabels,
 			WaitTimeInRetry: waitTimeInRetry,
 			RetryTimeLimit:  retryTimeLimit,
+			ServersInitParams: masterServersInitParams{
+				TarGz:  "https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/main.tar.gz",
+				Folder: "hcloud-k8s-ctl-main",
+			},
 		},
 		MasterLoadBalancer: masterLoadBalancer{
 			LoadBalancerType: "lb11",
@@ -152,7 +159,7 @@ func (c *ApplicationConfig) Load() error {
 		return err
 	}
 
-	_, c.config.IPRangeNet, err = net.ParseCIDR(c.config.IPRange)
+	_, _, err = net.ParseCIDR(c.config.IPRange)
 	if err != nil {
 		return err
 	}

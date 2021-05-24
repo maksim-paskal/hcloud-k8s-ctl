@@ -14,6 +14,9 @@ masterServers:
     role: master
   waittimeinretry: 3s
   retrytimelimit: 20
+  serversinitparams:
+    targz: https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/main.tar.gz
+    folder: hcloud-k8s-ctl-main
 masterLoadBalancer:
   loadbalancertype: lb11
   location: fsn1
@@ -21,7 +24,6 @@ masterLoadBalancer:
   destinationport: 6443
   selector: role=master
 cliArgs:
-  loglevel: DEBUG
+  loglevel: INFO
   configpath: config.yaml
-  deletecluster: true
-  createcluster: false
+  action: ""
