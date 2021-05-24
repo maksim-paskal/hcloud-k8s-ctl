@@ -20,8 +20,10 @@ export DEBIAN_FRONTEND=noninteractive
 cd /root
 rm -rf *
 curl -sSL -o scripts.tar.gz \
-https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/main.tar.gz
+%s
 
 tar -xvf scripts.tar.gz
-mv ./hcloud-k8s-ctl-main/scripts ./scripts
+mv ./%s/scripts ./scripts
+
+chmod +x /root/scripts/*.sh
 `

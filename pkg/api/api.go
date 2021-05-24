@@ -45,8 +45,27 @@ func NewApplicationAPI(config *config.ApplicationConfig) *ApplicationAPI {
 	return &api
 }
 
+func (api *ApplicationAPI) saveKubeconfig() error {
+	log.Info("kubeconfig=\n" + api.clusterKubeConfig)
+	log.Infof("Saving kubeconfig to %s", api.config.Get().KubeConfigPath)
+
+	err := ioutil.WriteFile(api.config.Get().KubeConfigPath, []byte(api.clusterKubeConfig), 0644) //nolint:gosec
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (api *ApplicationAPI) getCommonExecCommand() string {
+	return fmt.Sprintf(commonExecCommand,
+		api.config.Get().MasterServers.ServersInitParams.TarGz,
+		api.config.Get().MasterServers.ServersInitParams.Folder,
+	)
+}
+
 func (api *ApplicationAPI) getCommonInstallCommand() string {
-	return commonExecCommand + `
+	return api.getCommonExecCommand() + `
 
 /root/scripts/common-install.sh
 
@@ -54,7 +73,7 @@ func (api *ApplicationAPI) getCommonInstallCommand() string {
 }
 
 func (api *ApplicationAPI) getInitMasterCommand(loadBalancerIP string) string {
-	return commonExecCommand + `
+	return api.getCommonExecCommand() + `
 
 export HCLOUD_TOKEN=` + api.config.Get().HetznerToken + `
 export MASTER_LB=` + loadBalancerIP + `
@@ -113,7 +132,9 @@ func (api *ApplicationAPI) waitForServer(server string) (string, error) {
 }
 
 func (api *ApplicationAPI) joinToMasterNodes(server string) error {
-	log.Infof("Join %s server to master nodes...", server)
+	log := log.WithField("server", server)
+
+	log.Infof("Join server to master nodes...")
 
 	// join to cluster
 	retryCount := 0
@@ -128,7 +149,7 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 		}
 		retryCount++
 
-		log.Infof("Waiting for master node... try=%d", retryCount)
+		log.Infof("Waiting for server... try=%d", retryCount)
 
 		serverIP, err := api.waitForServer(server)
 		if err != nil {
@@ -136,6 +157,10 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 
 			continue
 		}
+
+		log.Info("Executing command...")
+
+		log.Debug(api.masterClusterJoin)
 
 		stdout, stderr, err := api.execCommand(serverIP, api.masterClusterJoin)
 		if err != nil {
@@ -153,10 +178,11 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 	return nil
 }
 
-func (api *ApplicationAPI) initFirstMasterNode() error {
-	log.Info("Init first master node...")
+func (api *ApplicationAPI) postInstall() error {
+	log.Info("Executing postInstall...")
 
-	// make first node
+	serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, 1)
+
 	retryCount := 0
 
 	for {
@@ -171,12 +197,56 @@ func (api *ApplicationAPI) initFirstMasterNode() error {
 
 		log.Infof("Waiting for master node... try=%d", retryCount)
 
-		serverIP, err := api.waitForServer(fmt.Sprintf(api.config.Get().MasterServers.NamePattern, 1))
+		serverIP, err := api.waitForServer(serverName)
 		if err != nil {
 			log.WithError(err).Error()
 
 			continue
 		}
+
+		log.Info("Executing command...")
+
+		stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/post-install.sh")
+		if err != nil {
+			log.WithError(err).Fatal(stderr)
+		}
+
+		log.Debugf("stdout=%s", stdout)
+		log.Debugf("stderr=%s", stderr)
+
+		break
+	}
+
+	return nil
+}
+
+func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
+	log.Info("Init first master node...")
+
+	serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, 1)
+
+	retryCount := 0
+
+	for {
+		if retryCount > api.config.Get().MasterServers.RetryTimeLimit {
+			return errRetryLimitReached
+		}
+
+		if retryCount > 0 {
+			time.Sleep(api.config.Get().MasterServers.WaitTimeInRetry)
+		}
+		retryCount++
+
+		log.Infof("Waiting for master node... try=%d", retryCount)
+
+		serverIP, err := api.waitForServer(serverName)
+		if err != nil {
+			log.WithError(err).Error()
+
+			continue
+		}
+
+		log.Info("Waiting for loadBalancer...")
 
 		loadBalancerIP, err := api.waitForLoadBalancer(api.config.Get().ClusterName)
 		if err != nil {
@@ -184,6 +254,10 @@ func (api *ApplicationAPI) initFirstMasterNode() error {
 
 			continue
 		}
+
+		log.Info("Executing command...")
+
+		log.Debug(api.getInitMasterCommand(loadBalancerIP))
 
 		stdout, stderr, err := api.execCommand(serverIP, api.getInitMasterCommand(loadBalancerIP))
 		if err != nil {
@@ -195,12 +269,16 @@ func (api *ApplicationAPI) initFirstMasterNode() error {
 		log.Debugf("stdout=%s", stdout)
 		log.Debugf("stderr=%s", stderr)
 
+		log.Info("Get join command...")
+
 		stdout, stderr, err = api.execCommand(serverIP, "cat /root/scripts/join-master.sh")
 		if err != nil {
 			log.WithError(err).Fatal(stderr)
 		}
 
 		api.masterClusterJoin = stdout
+
+		log.Info("Get kubeconfig..")
 
 		stdout, stderr, err = api.execCommand(serverIP, "cat /etc/kubernetes/admin.conf")
 		if err != nil {
@@ -346,9 +424,14 @@ func (api *ApplicationAPI) createSSHKey() error {
 func (api *ApplicationAPI) createNetwork() error {
 	log.Info("Creating network...")
 
+	_, IPRangeNet, err := net.ParseCIDR(api.config.Get().IPRange)
+	if err != nil {
+		return err
+	}
+
 	k8sNetwork, _, err := api.hcloudClient.Network.Create(api.ctx, hcloud.NetworkCreateOpts{
 		Name:    api.config.Get().ClusterName,
-		IPRange: api.config.Get().IPRangeNet,
+		IPRange: IPRangeNet,
 	})
 	if err != nil {
 		return err
@@ -356,7 +439,7 @@ func (api *ApplicationAPI) createNetwork() error {
 
 	k8sNetworkSubnet := hcloud.NetworkSubnet{
 		Type:        hcloud.NetworkSubnetTypeServer,
-		IPRange:     api.config.Get().IPRangeNet,
+		IPRange:     IPRangeNet,
 		NetworkZone: hcloud.NetworkZoneEUCentral,
 	}
 
@@ -398,46 +481,66 @@ func (api *ApplicationAPI) NewCluster() error {
 		return errors.Wrap(err, "error in init first master nodes")
 	}
 
+	err = api.saveKubeconfig()
+	if err != nil {
+		log.WithError(err).Warn("error in saving kubeconfig")
+	}
+
 	for i := 2; i <= api.config.Get().MasterCount; i++ {
-		err = api.joinToMasterNodes(fmt.Sprintf(api.config.Get().MasterServers.NamePattern, i))
+		serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, i)
+
+		log := log.WithField("server", serverName)
+
+		err = api.joinToMasterNodes(serverName)
 		if err != nil {
-			return errors.Wrap(err, "error in join")
+			log.WithError(err).Error(err, "error in join")
 		}
 	}
 
-	log.Info("kubeconfig=\n" + api.clusterKubeConfig)
-	log.Infof("Saving kubeconfig to %s", api.config.Get().KubeConfigPath)
-
-	err = ioutil.WriteFile(api.config.Get().KubeConfigPath, []byte(api.clusterKubeConfig), 0644) //nolint:gosec
+	err = api.postInstall()
 	if err != nil {
-		log.WithError(err).Error(err)
+		return errors.Wrap(err, "error in postInstall")
 	}
+
+	log.Info("Cluster created!")
 
 	return nil
 }
 
-func (api *ApplicationAPI) DeleteCluster() {
+func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 	log.Info("Deleting cluster...")
 
 	k8sNetwork, _, _ := api.hcloudClient.Network.Get(api.ctx, api.config.Get().ClusterName)
 	if k8sNetwork != nil {
-		_, _ = api.hcloudClient.Network.Delete(api.ctx, k8sNetwork)
+		_, err := api.hcloudClient.Network.Delete(api.ctx, k8sNetwork)
+		if err != nil {
+			log.WithError(err).Warn("error deleting Network")
+		}
 	}
 
 	k8sSSHKey, _, _ := api.hcloudClient.SSHKey.Get(api.ctx, api.config.Get().ClusterName)
 	if k8sSSHKey != nil {
-		_, _ = api.hcloudClient.SSHKey.Delete(api.ctx, k8sSSHKey)
+		_, err := api.hcloudClient.SSHKey.Delete(api.ctx, k8sSSHKey)
+		if err != nil {
+			log.WithError(err).Warn("error deleting SSHKey")
+		}
 	}
 
 	k8sLoadBalancer, _, _ := api.hcloudClient.LoadBalancer.Get(api.ctx, api.config.Get().ClusterName)
 	if k8sLoadBalancer != nil {
-		_, _ = api.hcloudClient.LoadBalancer.Delete(api.ctx, k8sLoadBalancer)
+		_, err := api.hcloudClient.LoadBalancer.Delete(api.ctx, k8sLoadBalancer)
+		if err != nil {
+			log.WithError(err).Warn("error deleting LoadBalancer")
+		}
 	}
 
 	for i := 1; i <= api.config.Get().MasterCount; i++ {
 		k8sServer, _, _ := api.hcloudClient.Server.Get(api.ctx, fmt.Sprintf(api.config.Get().MasterServers.NamePattern, i))
 		if k8sServer != nil {
-			_, _ = api.hcloudClient.Server.Delete(api.ctx, k8sServer)
+			_, err := api.hcloudClient.Server.Delete(api.ctx, k8sServer)
+			if err != nil {
+				log.WithError(err).Warnf("error deleting Server=%s", k8sServer.Name)
+			}
 		}
 	}
 
@@ -448,7 +551,10 @@ func (api *ApplicationAPI) DeleteCluster() {
 	})
 
 	for _, nodeServer := range nodeServers {
-		_, _ = api.hcloudClient.Server.Delete(api.ctx, nodeServer)
+		_, err := api.hcloudClient.Server.Delete(api.ctx, nodeServer)
+		if err != nil {
+			log.WithError(err).Warnf("error deleting Server=%s", nodeServer.Name)
+		}
 	}
 }
 

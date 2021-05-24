@@ -14,6 +14,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"os"
 	"strings"
 
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/api"
@@ -22,12 +24,21 @@ import (
 )
 
 //nolint:gochecknoglobals
-var gitVersion = "dev"
+var (
+	gitVersion  = "dev"
+	versionFlag = flag.Bool("version", false, "version")
+)
 
 func main() {
+	flag.Parse()
+
+	if *versionFlag {
+		fmt.Println(gitVersion) //nolint:forbidigo
+		os.Exit(0)
+	}
+
 	log.Infof("Starting %s...", gitVersion)
 
-	flag.Parse()
 	log.SetReportCaller(true)
 
 	applicationConfig := config.NewApplicationConfig()
@@ -50,10 +61,6 @@ func main() {
 
 	switch strings.ToLower(*applicationConfig.Get().CliArgs.Action) {
 	case "create":
-		if *applicationConfig.Get().CliArgs.DeleteBeforeCreation {
-			applicationAPI.DeleteCluster()
-		}
-
 		err = applicationAPI.NewCluster()
 		if err != nil {
 			log.WithError(err).Fatal()
