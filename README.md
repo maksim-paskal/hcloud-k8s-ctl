@@ -37,7 +37,7 @@ and start application
 # kubernetes autoscaler will create 1 worker node
 hcloud-k8s-ctl -action=create
 ```
-all nodes in cluster initialized with official kubeadm - for all nodes use this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/common-install.sh) for master initializing this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/init-master.sh) 
+all nodes in cluster initialized with official kubeadm - for all nodes use this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/common-install.sh), for master initializing this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/init-master.sh), for initial applications in cluster this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/post-install.sh) 
 
 ## Cleanup
 ```bash
