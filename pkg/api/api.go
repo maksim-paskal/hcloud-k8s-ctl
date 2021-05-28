@@ -314,13 +314,6 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 		return err
 	}
 
-	k8sTarget := hcloud.LoadBalancerCreateOptsTarget{
-		Type: hcloud.LoadBalancerTargetTypeLabelSelector,
-		LabelSelector: hcloud.LoadBalancerCreateOptsTargetLabelSelector{
-			Selector: api.config.Get().MasterLoadBalancer.Selector,
-		},
-	}
-
 	ListenPort := api.config.Get().MasterLoadBalancer.ListenPort
 	DestinationPort := api.config.Get().MasterLoadBalancer.DestinationPort
 
@@ -335,7 +328,6 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 		LoadBalancerType: k8sLoadBalancerType,
 		Location:         k8sLocation,
 		Network:          k8sNetwork,
-		Targets:          []hcloud.LoadBalancerCreateOptsTarget{k8sTarget},
 		Services:         []hcloud.LoadBalancerCreateOptsService{k8sService},
 	})
 
@@ -346,7 +338,22 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 	return nil
 }
 
-func (api *ApplicationAPI) createServer() error {
+func (api *ApplicationAPI) attachToBalancer(server hcloud.ServerCreateResult, balancer *hcloud.LoadBalancer) error {
+	usePrivateIP := true
+	k8sTargetServer := hcloud.LoadBalancerAddServerTargetOpts{
+		Server:       server.Server,
+		UsePrivateIP: &usePrivateIP,
+	}
+
+	_, _, err := api.hcloudClient.LoadBalancer.AddServerTarget(api.ctx, balancer, k8sTargetServer)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 	log.Info("Creating servers...")
 
 	serverType, _, err := api.hcloudClient.ServerType.Get(api.ctx, api.config.Get().MasterServers.ServerType)
@@ -376,9 +383,18 @@ func (api *ApplicationAPI) createServer() error {
 
 	startAfterCreate := true
 
+	k8sLoadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(api.ctx, api.config.Get().ClusterName)
+	if err != nil {
+		return err
+	}
+
 	for i := 1; i <= api.config.Get().MasterCount; i++ {
+		serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, i)
+
+		log := log.WithField("server", serverName)
+
 		prop := hcloud.ServerCreateOpts{
-			Name:             fmt.Sprintf(api.config.Get().MasterServers.NamePattern, i),
+			Name:             serverName,
 			ServerType:       serverType,
 			Image:            serverImage,
 			Networks:         []*hcloud.Network{k8sNetwork},
@@ -393,9 +409,27 @@ func (api *ApplicationAPI) createServer() error {
 			prop.UserData = api.getCommonInstallCommand()
 		}
 
-		_, _, err = api.hcloudClient.Server.Create(api.ctx, prop)
+		serverResults, _, err := api.hcloudClient.Server.Create(api.ctx, prop)
 		if err != nil {
 			return err
+		}
+
+		retryCount := 0
+
+		for {
+			if retryCount > api.config.Get().MasterServers.RetryTimeLimit {
+				return errRetryLimitReached
+			}
+
+			err = api.attachToBalancer(serverResults, k8sLoadBalancer)
+			if err != nil {
+				log.WithError(err).Debug()
+				time.Sleep(api.config.Get().MasterServers.WaitTimeInRetry)
+
+				continue
+			}
+
+			break
 		}
 	}
 
