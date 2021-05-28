@@ -5,4 +5,6 @@ spec:
       - name: hcloud-cloud-controller-manager
         env:
         - name: HCLOUD_NETWORK
-          value: k8s
+          value: "k8s"
+        - name: HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP
+          value: "true"

@@ -53,7 +53,6 @@ type masterLoadBalancer struct {
 	Location         string
 	ListenPort       int
 	DestinationPort  int
-	Selector         string
 }
 
 type Type struct {
@@ -117,7 +116,6 @@ func (c *ApplicationConfig) defaultConfig() Type {
 			Location:         "fsn1",
 			ListenPort:       loadBalancerDefaultPort,
 			DestinationPort:  loadBalancerDefaultPort,
-			Selector:         "role=master",
 		},
 	}
 }
