@@ -17,6 +17,8 @@ set -ex
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
+kubectl annotate node -lnode-role.kubernetes.io/master cluster-autoscaler.kubernetes.io/scale-down-disabled=true
+
 kubectl apply -f /root/scripts/deploy
 
 kubectl -n kube-system patch deployment hcloud-cloud-controller-manager --patch "$(cat /root/scripts/patch-ccm.yaml)"
