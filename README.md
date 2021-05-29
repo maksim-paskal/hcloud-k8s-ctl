@@ -26,6 +26,8 @@ for HA needs odd number of master nodes (minimum 3) https://etcd.io/docs/v3.4/fa
 
 create simle configuration file `config.yaml` full configuration example [here](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/examples/config-full.yaml)
 ```yaml
+# kubeconfig path
+kubeConfigPath: ~/.kube/hcloud
 # Hetzner cloud internal network CIDR
 ipRange: "10.0.0.0/16"
 # servers for kuberntes master (recomended 3)
@@ -39,6 +41,12 @@ hcloud-k8s-ctl -action=create
 ```
 all nodes in cluster initialized with official kubeadm - for all nodes use this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/common-install.sh), for master initializing this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/init-master.sh), for initial applications in cluster this [script](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/scripts/post-install.sh) 
 
+## Access to cluster
+```
+export KUBECONFIG=$HOME/.kube/hcloud
+
+kubectl get no
+```
 ## Cleanup
 ```bash
 hcloud-k8s-ctl -action=delete
