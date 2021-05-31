@@ -241,7 +241,7 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 
 		serverIP, err := api.waitForServer(serverName)
 		if err != nil {
-			log.WithError(err).Error()
+			log.WithError(err).Debug()
 
 			continue
 		}

@@ -26,6 +26,4 @@ download-yamls:
 	curl -sSL -o scripts/deploy/hcloud-csi.yml https://raw.githubusercontent.com/hetznercloud/csi-driver/master/deploy/kubernetes/hcloud-csi.yml
 	curl -sSL -o scripts/deploy/metrics-server.yml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 patch-cluster:
-	kubectl apply -f ./scripts/deploy
-	kubectl -n kube-system patch deployment hcloud-cloud-controller-manager --patch "`cat ./scripts/patch-ccm.yaml`"
-	kubectl -n kube-system patch deployment coredns --patch "`cat ./scripts/patch-coredns.yaml`"
+	KUBECONFIG_PATH=$(KUBECONFIG) SCRTIPT_PATH=. ./scripts/post-install.sh

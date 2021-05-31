@@ -15,11 +15,14 @@
 # limitations under the License.
 set -ex
 
-export KUBECONFIG=/etc/kubernetes/admin.conf
+: ${KUBECONFIG_PATH:='/etc/kubernetes/admin.conf'}
+: ${SCRTIPT_PATH:='/root'}
 
-kubectl annotate node -lnode-role.kubernetes.io/master cluster-autoscaler.kubernetes.io/scale-down-disabled=true
+export KUBECONFIG=$KUBECONFIG_PATH
 
-kubectl apply -f /root/scripts/deploy
+kubectl annotate node --overwrite -lnode-role.kubernetes.io/master cluster-autoscaler.kubernetes.io/scale-down-disabled=true
 
-kubectl -n kube-system patch deployment hcloud-cloud-controller-manager --patch "$(cat /root/scripts/patch-ccm.yaml)"
-kubectl -n kube-system patch deployment coredns --patch "$(cat /root/scripts/patch-coredns.yaml)"
+kubectl apply -f $SCRTIPT_PATH/scripts/deploy
+
+kubectl -n kube-system patch deployment hcloud-cloud-controller-manager --patch "$(cat $SCRTIPT_PATH/scripts/patch-ccm.yaml)"
+kubectl -n kube-system patch deployment coredns --patch "$(cat $SCRTIPT_PATH/scripts/patch-coredns.yaml)"
