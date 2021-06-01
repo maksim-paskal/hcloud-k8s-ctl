@@ -607,7 +607,7 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 }
 
 func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string, string, error) {
-	log.Debugf(ipAddress, command)
+	log.Debugf("ipAddress=%s,command=%s", ipAddress, command)
 
 	privateKey, err := ioutil.ReadFile(api.config.Get().SSHPrivateKey)
 	if err != nil {
