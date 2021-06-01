@@ -160,8 +160,6 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 
 		log.Info("Executing command...")
 
-		log.Debug(api.masterClusterJoin)
-
 		stdout, stderr, err := api.execCommand(serverIP, api.masterClusterJoin)
 		if err != nil {
 			log.WithError(err).Error(stderr)
@@ -214,6 +212,16 @@ func (api *ApplicationAPI) postInstall() error {
 		log.Debugf("stdout=%s", stdout)
 		log.Debugf("stderr=%s", stderr)
 
+		if api.config.Get().MasterCount == 1 {
+			stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/one-master-mode.sh")
+			if err != nil {
+				log.WithError(err).Fatal(stderr)
+			}
+
+			log.Debugf("stdout=%s", stdout)
+			log.Debugf("stderr=%s", stderr)
+		}
+
 		break
 	}
 
@@ -246,18 +254,20 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 			continue
 		}
 
-		log.Info("Waiting for loadBalancer...")
+		loadBalancerIP := serverIP
 
-		loadBalancerIP, err := api.waitForLoadBalancer(api.config.Get().ClusterName)
-		if err != nil {
-			log.WithError(err).Error()
+		if api.config.Get().MasterCount > 1 {
+			log.Info("Waiting for loadBalancer...")
 
-			continue
+			loadBalancerIP, err = api.waitForLoadBalancer(api.config.Get().ClusterName)
+			if err != nil {
+				log.WithError(err).Error()
+
+				continue
+			}
 		}
 
 		log.Info("Executing command...")
-
-		log.Debug(api.getInitMasterCommand(loadBalancerIP))
 
 		stdout, stderr, err := api.execCommand(serverIP, api.getInitMasterCommand(loadBalancerIP))
 		if err != nil {
@@ -421,12 +431,14 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 				return errRetryLimitReached
 			}
 
-			err = api.attachToBalancer(serverResults, k8sLoadBalancer)
-			if err != nil {
-				log.WithError(err).Debug()
-				time.Sleep(api.config.Get().MasterServers.WaitTimeInRetry)
+			if api.config.Get().MasterCount > 1 {
+				err = api.attachToBalancer(serverResults, k8sLoadBalancer)
+				if err != nil {
+					log.WithError(err).Debug()
+					time.Sleep(api.config.Get().MasterServers.WaitTimeInRetry)
 
-				continue
+					continue
+				}
 			}
 
 			break
@@ -487,7 +499,7 @@ func (api *ApplicationAPI) createNetwork() error {
 	return nil
 }
 
-func (api *ApplicationAPI) NewCluster() error {
+func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 	log.Info("Creating cluster...")
 
 	err := api.createNetwork()
@@ -500,9 +512,11 @@ func (api *ApplicationAPI) NewCluster() error {
 		return errors.Wrap(err, "error in create sshkey")
 	}
 
-	err = api.createLoadBalancer()
-	if err != nil {
-		return errors.Wrap(err, "error in create loadbalancer")
+	if api.config.Get().MasterCount > 1 {
+		err = api.createLoadBalancer()
+		if err != nil {
+			return errors.Wrap(err, "error in create loadbalancer")
+		}
 	}
 
 	err = api.createServer()
@@ -593,6 +607,8 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 }
 
 func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string, string, error) {
+	log.Debugf(ipAddress, command)
+
 	privateKey, err := ioutil.ReadFile(api.config.Get().SSHPrivateKey)
 	if err != nil {
 		return "", "", err
