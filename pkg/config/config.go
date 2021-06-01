@@ -165,8 +165,8 @@ func (c *ApplicationConfig) Load() error {
 	return nil
 }
 
-func (c *ApplicationConfig) Get() Type {
-	return c.config
+func (c *ApplicationConfig) Get() *Type {
+	return &c.config
 }
 
 func (c *ApplicationConfig) String() string {

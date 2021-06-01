@@ -31,6 +31,8 @@ kubeConfigPath: ~/.kube/hcloud
 # Hetzner cloud internal network CIDR
 ipRange: "10.0.0.0/16"
 # servers for kuberntes master (recomended 3)
+# for development purposes cluster can have 1 master node  
+# in this case cluster will be created without loadbalancer and pods can schedule on master
 masterCount: 3
 ```
 and start application
