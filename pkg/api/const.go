@@ -12,6 +12,8 @@ limitations under the License.
 */
 package api
 
+import "io/fs"
+
 const commonExecCommand = `#!/bin/bash
 set -ex
 
@@ -27,3 +29,5 @@ mv ./%s/scripts ./scripts
 
 chmod +x /root/scripts/*.sh
 `
+
+const kubeconfigFileMode = fs.FileMode(0600)

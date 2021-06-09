@@ -49,7 +49,11 @@ func (api *ApplicationAPI) saveKubeconfig() error {
 	log.Info("kubeconfig=\n" + api.clusterKubeConfig)
 	log.Infof("Saving kubeconfig to %s", api.config.Get().KubeConfigPath)
 
-	err := ioutil.WriteFile(api.config.Get().KubeConfigPath, []byte(api.clusterKubeConfig), 0644) //nolint:gosec
+	err := ioutil.WriteFile(
+		api.config.Get().KubeConfigPath,
+		[]byte(api.clusterKubeConfig),
+		kubeconfigFileMode,
+	)
 	if err != nil {
 		return err
 	}
