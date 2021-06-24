@@ -23,5 +23,5 @@ kubectl -n kube-system scale deploy --all --replicas=1
 # remove pdb for correct scaledown of worker nodes
 kubectl -n kube-system delete pdb --all
 
-# remove taint from node
-kubectl taint nodes node-role.kubernetes.io/master- --all
+# remove taint from node if taint found
+kubectl taint nodes node-role.kubernetes.io/master- --all || true

@@ -37,11 +37,28 @@ type cliArgs struct {
 	Action     *string
 }
 
+type kubernetesEnv struct {
+	Name  string
+	Value string
+}
+
+type deploymentsConfig struct {
+	AutoscalerConfig autoscalerConfig
+	CcmConfig        ccmConfig
+}
+
+type autoscalerConfig struct {
+	Args []string
+}
+
+type ccmConfig struct {
+	Env []kubernetesEnv
+}
+
 type masterServers struct {
 	NamePattern       string
 	ServerType        string
 	Image             string
-	Datacenter        string
 	Labels            map[string]string
 	WaitTimeInRetry   time.Duration
 	RetryTimeLimit    int
@@ -50,7 +67,6 @@ type masterServers struct {
 
 type masterLoadBalancer struct {
 	LoadBalancerType string
-	Location         string
 	ListenPort       int
 	DestinationPort  int
 }
@@ -63,9 +79,12 @@ type Type struct {
 	SSHPrivateKey      string             `yaml:"sshPrivateKey"`
 	SSHPublicKey       string             `yaml:"sshPublicKey"`
 	MasterCount        int                `yaml:"masterCount"`
+	Location           string             `yaml:"location"`
+	Datacenter         string             `yaml:"datacenter"`
 	MasterServers      masterServers      `yaml:"masterServers"`
 	MasterLoadBalancer masterLoadBalancer `yaml:"masterLoadBalancer"`
 	CliArgs            cliArgs            `yaml:"cliArgs"`
+	DeploymentsConfig  deploymentsConfig  `yaml:"deploymentsConfig"`
 }
 
 type ApplicationConfig struct {
@@ -83,7 +102,7 @@ func NewApplicationConfig() *ApplicationConfig {
 	return &ApplicationConfig{}
 }
 
-func (c *ApplicationConfig) defaultConfig() Type {
+func (c *ApplicationConfig) defaultConfig() Type { //nolint:funlen
 	privateKey := "~/.ssh/id_rsa"
 	kubeConfigPath := "~/.kube/hcloud"
 
@@ -93,6 +112,8 @@ func (c *ApplicationConfig) defaultConfig() Type {
 	return Type{
 		HetznerToken:   os.Getenv("HCLOUD_TOKEN"),
 		ClusterName:    "k8s",
+		Location:       defaultLocation,
+		Datacenter:     defaultDatacenter,
 		KubeConfigPath: kubeConfigPath,
 		SSHPrivateKey:  privateKey,
 		SSHPublicKey:   fmt.Sprintf("%s.pub", privateKey),
@@ -102,7 +123,6 @@ func (c *ApplicationConfig) defaultConfig() Type {
 			NamePattern:     "master-%d",
 			ServerType:      "cx21",
 			Image:           "ubuntu-20.04",
-			Datacenter:      "fsn1-dc14",
 			Labels:          serverLabels,
 			WaitTimeInRetry: waitTimeInRetry,
 			RetryTimeLimit:  retryTimeLimit,
@@ -113,9 +133,43 @@ func (c *ApplicationConfig) defaultConfig() Type {
 		},
 		MasterLoadBalancer: masterLoadBalancer{
 			LoadBalancerType: "lb11",
-			Location:         "fsn1",
 			ListenPort:       loadBalancerDefaultPort,
 			DestinationPort:  loadBalancerDefaultPort,
+		},
+		DeploymentsConfig: deploymentsConfig{
+			AutoscalerConfig: autoscalerConfig{
+				Args: []string{
+					"--v=4",
+					"--cloud-provider=hetzner",
+					"--stderrthreshold=info",
+					"--expander=least-waste",
+					"--scale-down-enabled=true",
+					"--skip-nodes-with-local-storage=false",
+					"--skip-nodes-with-system-pods=false",
+					"--scale-down-utilization-threshold=0.8",
+					"--nodes=0:20:CX11:{{ upper .Values.location }}:cx11",
+					"--nodes=0:20:CX21:{{ upper .Values.location }}:cx21",
+					"--nodes=0:20:CPX31:{{ upper .Values.location }}:cpx31",
+					"--nodes=0:20:CPX41:{{ upper .Values.location }}:cpx41",
+					"--nodes=0:20:CPX51:{{ upper .Values.location }}:cpx51",
+				},
+			},
+			CcmConfig: ccmConfig{
+				Env: []kubernetesEnv{
+					{
+						Name:  "HCLOUD_NETWORK",
+						Value: "{{ .Values.clusterName }}",
+					},
+					{
+						Name:  "HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP",
+						Value: "true",
+					},
+					{
+						Name:  "HCLOUD_LOAD_BALANCERS_LOCATION",
+						Value: "{{ lower .Values.location }}",
+					},
+				},
+			},
 		},
 	}
 }

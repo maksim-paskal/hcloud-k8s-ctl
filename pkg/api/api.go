@@ -15,6 +15,7 @@ package api
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net"
@@ -25,6 +26,7 @@ import (
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
+	"gopkg.in/yaml.v3"
 )
 
 type ApplicationAPI struct {
@@ -35,14 +37,40 @@ type ApplicationAPI struct {
 	clusterKubeConfig string
 }
 
-func NewApplicationAPI(config *config.ApplicationConfig) *ApplicationAPI {
+func NewApplicationAPI(config *config.ApplicationConfig) (*ApplicationAPI, error) {
 	api := ApplicationAPI{
 		ctx:          context.Background(),
 		config:       config,
 		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken)),
 	}
 
-	return &api
+	if err := api.validateConfig(); err != nil {
+		return &api, err
+	}
+
+	return &api, nil
+}
+
+func (api *ApplicationAPI) validateConfig() error {
+	location, _, err := api.hcloudClient.Location.Get(api.ctx, api.config.Get().Location)
+	if err != nil {
+		return errors.Wrap(err, "hcloudClient.Location.Get")
+	}
+
+	if location == nil {
+		return errors.Wrap(errLocationNotFound, api.config.Get().Location)
+	}
+
+	datacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, api.config.Get().Datacenter)
+	if err != nil {
+		return errors.Wrap(err, "hcloudClient.Datacenter.Get")
+	}
+
+	if datacenter == nil {
+		return errors.Wrap(errDatacenterNotFound, api.config.Get().Datacenter)
+	}
+
+	return nil
 }
 
 func (api *ApplicationAPI) saveKubeconfig() error {
@@ -180,7 +208,7 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 	return nil
 }
 
-func (api *ApplicationAPI) postInstall() error {
+func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 	log.Info("Executing postInstall...")
 
 	serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, 1)
@@ -206,9 +234,20 @@ func (api *ApplicationAPI) postInstall() error {
 			continue
 		}
 
+		if copyNewScripts {
+			log.Info("Clear current root directory - and loading new scripts")
+
+			_, stderr, err := api.execCommand(serverIP, api.getCommonExecCommand())
+			if err != nil {
+				log.WithError(err).Fatal(stderr)
+			}
+		}
+
 		log.Info("Executing command...")
 
-		stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/post-install.sh")
+		postInstallCommand := fmt.Sprintf("VALUES=%s /root/scripts/post-install.sh", api.getDeploymentValues())
+
+		stdout, stderr, err := api.execCommand(serverIP, postInstallCommand)
 		if err != nil {
 			log.WithError(err).Fatal(stderr)
 		}
@@ -318,7 +357,7 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 		return err
 	}
 
-	k8sLocation, _, err := api.hcloudClient.Location.Get(api.ctx, api.config.Get().MasterLoadBalancer.Location)
+	k8sLocation, _, err := api.hcloudClient.Location.Get(api.ctx, api.config.Get().Location)
 	if err != nil {
 		return err
 	}
@@ -390,7 +429,7 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 		return err
 	}
 
-	k8sDatacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, api.config.Get().MasterServers.Datacenter)
+	k8sDatacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, api.config.Get().Datacenter)
 	if err != nil {
 		return err
 	}
@@ -549,7 +588,7 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 		}
 	}
 
-	err = api.postInstall()
+	err = api.postInstall(false)
 	if err != nil {
 		return errors.Wrap(err, "error in postInstall")
 	}
@@ -586,17 +625,22 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 		}
 	}
 
-	for i := 1; i <= api.config.Get().MasterCount; i++ {
-		k8sServer, _, _ := api.hcloudClient.Server.Get(api.ctx, fmt.Sprintf(api.config.Get().MasterServers.NamePattern, i))
-		if k8sServer != nil {
-			_, err := api.hcloudClient.Server.Delete(api.ctx, k8sServer)
-			if err != nil {
-				log.WithError(err).Warnf("error deleting Server=%s", k8sServer.Name)
-			}
+	// delete master nodes
+	nodeServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+		ListOpts: hcloud.ListOpts{
+			LabelSelector: "role=master",
+		},
+	})
+
+	for _, nodeServer := range nodeServers {
+		_, err := api.hcloudClient.Server.Delete(api.ctx, nodeServer)
+		if err != nil {
+			log.WithError(err).Warnf("error deleting Server=%s", nodeServer.Name)
 		}
 	}
 
-	nodeServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+	// delete worker nodes
+	nodeServers, _, _ = api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: "hcloud/node-group",
 		},
@@ -653,4 +697,77 @@ func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string
 	}
 
 	return stdout.String(), stderr.String(), nil
+}
+
+func (api *ApplicationAPI) ListConfigurations() {
+	type DatacentersType struct {
+		Location string
+		Name     string
+	}
+
+	type ResultType struct {
+		Locations   []string
+		Datacenters []DatacentersType
+		ServerType  []string
+	}
+
+	result := ResultType{}
+
+	var err error
+
+	locations, err := api.hcloudClient.Location.All(api.ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, location := range locations {
+		result.Locations = append(result.Locations, location.Name)
+	}
+
+	datacenters, err := api.hcloudClient.Datacenter.All(api.ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, datacenter := range datacenters {
+		result.Datacenters = append(result.Datacenters, DatacentersType{
+			Name:     datacenter.Name,
+			Location: datacenter.Location.Name,
+		})
+	}
+
+	servertypes, err := api.hcloudClient.ServerType.All(api.ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for _, servertype := range servertypes {
+		result.ServerType = append(result.ServerType, servertype.Name)
+	}
+
+	resultYAML, err := yaml.Marshal(result)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Infof("\n%s", string(resultYAML))
+}
+
+func (api *ApplicationAPI) getDeploymentValues() string {
+	resultYAML, err := yaml.Marshal(api.config.Get())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Debug(string(resultYAML))
+
+	return base64.StdEncoding.EncodeToString(resultYAML)
+}
+
+func (api *ApplicationAPI) PatchClusterDeployment() {
+	if err := api.postInstall(true); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Info("Cluster pached!")
 }
