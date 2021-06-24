@@ -49,7 +49,17 @@ export KUBECONFIG=$HOME/.kube/hcloud
 
 kubectl get no
 ```
-## Cleanup
+
+## Patch already created cluster
+```
+hcloud-k8s-ctl -action=patch-cluster
+```
+
+## List available location/datacenter/servertype at Hezner
+```
+hcloud-k8s-ctl -action=list-configurations
+```
+## Delete already created cluster
 ```bash
 hcloud-k8s-ctl -action=delete
 ```
