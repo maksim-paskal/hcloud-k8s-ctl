@@ -29,7 +29,7 @@ var (
 	versionFlag = flag.Bool("version", false, "version")
 )
 
-func main() {
+func main() { //nolint:cyclop
 	flag.Parse()
 
 	if *versionFlag {
@@ -57,7 +57,10 @@ func main() {
 
 	log.Infof("Loaded config:\n%s\n", applicationConfig.String())
 
-	applicationAPI := api.NewApplicationAPI(applicationConfig)
+	applicationAPI, err := api.NewApplicationAPI(applicationConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	switch strings.ToLower(*applicationConfig.Get().CliArgs.Action) {
 	case "create":
@@ -67,6 +70,10 @@ func main() {
 		}
 	case "delete":
 		applicationAPI.DeleteCluster()
+	case "list-configurations":
+		applicationAPI.ListConfigurations()
+	case "patch-cluster":
+		applicationAPI.PatchClusterDeployment()
 	default:
 		log.Fatal("unknown action")
 	}

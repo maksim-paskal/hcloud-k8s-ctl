@@ -158,19 +158,7 @@ spec:
             memory: 300Mi
         command:
         - ./cluster-autoscaler
-        - --v=4
-        - --cloud-provider=hetzner
-        - --stderrthreshold=info
-        - --expander=least-waste
-        - --scale-down-enabled=true
-        - --skip-nodes-with-local-storage=false
-        - --skip-nodes-with-system-pods=false
-        - --scale-down-utilization-threshold=0.8
-        - --nodes=0:20:CX11:FSN1:cx11 #1CPU,2GB
-        - --nodes=0:20:CX21:FSN1:cx21 #2CPU,4GB
-        - --nodes=0:20:CPX31:FSN1:cpx31 #4CPU,8GB
-        - --nodes=0:20:CPX41:FSN1:cpx41 #8CPU,16GB
-        - --nodes=0:20:CPX51:FSN1:cpx51 #16CPU,32GB
+{{ tpl (toYaml .Values.deploymentsConfig.autoscalerconfig.args) . | indent 8 }}
         env:
         - name: HCLOUD_IMAGE
           value: "ubuntu-20.04"

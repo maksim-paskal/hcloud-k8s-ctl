@@ -19,4 +19,6 @@ const (
 	loadBalancerDefaultPort = 6443
 	waitTimeInRetry         = 3 * time.Second
 	retryTimeLimit          = 20
+	defaultLocation         = "fsn1"
+	defaultDatacenter       = "fsn1-dc14"
 )

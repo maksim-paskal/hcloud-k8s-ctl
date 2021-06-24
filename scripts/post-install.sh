@@ -22,7 +22,15 @@ export KUBECONFIG=$KUBECONFIG_PATH
 
 kubectl annotate node --overwrite -lnode-role.kubernetes.io/master cluster-autoscaler.kubernetes.io/scale-down-disabled=true
 
-kubectl apply -f $SCRTIPT_PATH/scripts/deploy
+echo $VALUES | base64 -d > $SCRTIPT_PATH/scripts/chart/values.yaml
 
-kubectl -n kube-system patch deployment hcloud-cloud-controller-manager --patch "$(cat $SCRTIPT_PATH/scripts/patch-ccm.yaml)"
+# install helm for kubernetes deploymens
+curl -o helm.tar.gz https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz
+tar -xvf helm.tar.gz
+mv linux-amd64/helm /usr/local/bin/helm
+rm helm.tar.gz
+rm -rf linux-amd64
+
+helm template $SCRTIPT_PATH/scripts/chart | kubectl apply -f -
+
 kubectl -n kube-system patch deployment coredns --patch "$(cat $SCRTIPT_PATH/scripts/patch-coredns.yaml)"

@@ -1,0 +1,26 @@
+clusterName: k8s
+location: nbg1
+deploymentsConfig:
+    autoscalerconfig:
+        args:
+            - --v=4
+            - --cloud-provider=hetzner
+            - --stderrthreshold=info
+            - --expander=least-waste
+            - --scale-down-enabled=true
+            - --skip-nodes-with-local-storage=false
+            - --skip-nodes-with-system-pods=false
+            - --scale-down-utilization-threshold=0.8
+            - --nodes=0:20:CX11:{{ upper .Values.location }}:cx11
+            - --nodes=0:20:CX21:{{ upper .Values.location }}:cx21
+            - --nodes=0:20:CPX31:{{ upper .Values.location }}:cpx31
+            - --nodes=0:20:CPX41:{{ upper .Values.location }}:cpx41
+            - --nodes=0:20:CPX51:{{ upper .Values.location }}:cpx51
+    ccmconfig:
+        env:
+            - name: HCLOUD_NETWORK
+              value: '{{ .Values.clusterName }}'
+            - name: HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP
+              value: "true"
+            - name: HCLOUD_LOAD_BALANCERS_LOCATION
+              value: '{{ lower .Values.location }}'

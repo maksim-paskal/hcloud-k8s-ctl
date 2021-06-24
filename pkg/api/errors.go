@@ -14,4 +14,8 @@ package api
 
 import "errors"
 
-var errRetryLimitReached = errors.New("retry limit reached")
+var (
+	errRetryLimitReached  = errors.New("retry limit reached")
+	errLocationNotFound   = errors.New("location not found")
+	errDatacenterNotFound = errors.New("datacenter not found")
+)
