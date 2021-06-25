@@ -5,11 +5,12 @@ ipRange: 10.0.0.0/16
 sshPrivateKey: ~/.ssh/id_rsa
 sshPublicKey: ~/.ssh/id_rsa.pub
 masterCount: 3
+location: fsn1
+datacenter: fsn1-dc14
 masterServers:
   namepattern: master-%d
   servertype: cx21
   image: ubuntu-20.04
-  datacenter: fsn1-dc14
   labels:
     role: master
   waittimeinretry: 3s
@@ -19,11 +20,33 @@ masterServers:
     folder: hcloud-k8s-ctl-main
 masterLoadBalancer:
   loadbalancertype: lb11
-  location: fsn1
   listenport: 6443
   destinationport: 6443
-  selector: role=master
 cliArgs:
   loglevel: INFO
   configpath: config.yaml
-  action: ""
+  action: list-configurations
+deploymentsConfig:
+  autoscalerconfig:
+    args:
+    - --v=4
+    - --cloud-provider=hetzner
+    - --stderrthreshold=info
+    - --expander=least-waste
+    - --scale-down-enabled=true
+    - --skip-nodes-with-local-storage=false
+    - --skip-nodes-with-system-pods=false
+    - --scale-down-utilization-threshold=0.8
+    - --nodes=0:20:CX11:{{ upper .Values.location }}:cx11
+    - --nodes=0:20:CX21:{{ upper .Values.location }}:cx21
+    - --nodes=0:20:CPX31:{{ upper .Values.location }}:cpx31
+    - --nodes=0:20:CPX41:{{ upper .Values.location }}:cpx41
+    - --nodes=0:20:CPX51:{{ upper .Values.location }}:cpx51
+  ccmconfig:
+    env:
+    - name: HCLOUD_NETWORK
+      value: "{{ .Values.clusterName }}"
+    - name: HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP
+      value: "true"
+    - name: HCLOUD_LOAD_BALANCERS_LOCATION
+      value: "{{ lower .Values.location }}"
