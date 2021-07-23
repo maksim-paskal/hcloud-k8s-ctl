@@ -30,17 +30,15 @@ import (
 )
 
 type ApplicationAPI struct {
-	config            *config.ApplicationConfig
 	hcloudClient      *hcloud.Client
 	ctx               context.Context
 	masterClusterJoin string
 	clusterKubeConfig string
 }
 
-func NewApplicationAPI(config *config.ApplicationConfig) (*ApplicationAPI, error) {
+func NewApplicationAPI() (*ApplicationAPI, error) {
 	api := ApplicationAPI{
 		ctx:          context.Background(),
-		config:       config,
 		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken)),
 	}
 
@@ -52,22 +50,22 @@ func NewApplicationAPI(config *config.ApplicationConfig) (*ApplicationAPI, error
 }
 
 func (api *ApplicationAPI) validateConfig() error {
-	location, _, err := api.hcloudClient.Location.Get(api.ctx, api.config.Get().Location)
+	location, _, err := api.hcloudClient.Location.Get(api.ctx, config.Get().Location)
 	if err != nil {
 		return errors.Wrap(err, "hcloudClient.Location.Get")
 	}
 
 	if location == nil {
-		return errors.Wrap(errLocationNotFound, api.config.Get().Location)
+		return errors.Wrap(errLocationNotFound, config.Get().Location)
 	}
 
-	datacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, api.config.Get().Datacenter)
+	datacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, config.Get().Datacenter)
 	if err != nil {
 		return errors.Wrap(err, "hcloudClient.Datacenter.Get")
 	}
 
 	if datacenter == nil {
-		return errors.Wrap(errDatacenterNotFound, api.config.Get().Datacenter)
+		return errors.Wrap(errDatacenterNotFound, config.Get().Datacenter)
 	}
 
 	return nil
@@ -75,10 +73,10 @@ func (api *ApplicationAPI) validateConfig() error {
 
 func (api *ApplicationAPI) saveKubeconfig() error {
 	log.Info("kubeconfig=\n" + api.clusterKubeConfig)
-	log.Infof("Saving kubeconfig to %s", api.config.Get().KubeConfigPath)
+	log.Infof("Saving kubeconfig to %s", config.Get().KubeConfigPath)
 
 	err := ioutil.WriteFile(
-		api.config.Get().KubeConfigPath,
+		config.Get().KubeConfigPath,
 		[]byte(api.clusterKubeConfig),
 		kubeconfigFileMode,
 	)
@@ -91,8 +89,8 @@ func (api *ApplicationAPI) saveKubeconfig() error {
 
 func (api *ApplicationAPI) getCommonExecCommand() string {
 	return fmt.Sprintf(commonExecCommand,
-		api.config.Get().MasterServers.ServersInitParams.TarGz,
-		api.config.Get().MasterServers.ServersInitParams.Folder,
+		config.Get().MasterServers.ServersInitParams.TarGz,
+		config.Get().MasterServers.ServersInitParams.Folder,
 	)
 }
 
@@ -107,7 +105,7 @@ func (api *ApplicationAPI) getCommonInstallCommand() string {
 func (api *ApplicationAPI) getInitMasterCommand(loadBalancerIP string) string {
 	return api.getCommonExecCommand() + `
 
-export HCLOUD_TOKEN=` + api.config.Get().HetznerToken + `
+export HCLOUD_TOKEN=` + config.Get().HetznerToken + `
 export MASTER_LB=` + loadBalancerIP + `
 
 /root/scripts/init-master.sh
@@ -172,12 +170,12 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 	retryCount := 0
 
 	for {
-		if retryCount > api.config.Get().MasterServers.RetryTimeLimit {
+		if retryCount > config.Get().MasterServers.RetryTimeLimit {
 			return errRetryLimitReached
 		}
 
 		if retryCount > 0 {
-			time.Sleep(api.config.Get().MasterServers.WaitTimeInRetry)
+			time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
 		}
 		retryCount++
 
@@ -211,17 +209,17 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 	log.Info("Executing postInstall...")
 
-	serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, 1)
+	serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, 1)
 
 	retryCount := 0
 
 	for {
-		if retryCount > api.config.Get().MasterServers.RetryTimeLimit {
+		if retryCount > config.Get().MasterServers.RetryTimeLimit {
 			return errRetryLimitReached
 		}
 
 		if retryCount > 0 {
-			time.Sleep(api.config.Get().MasterServers.WaitTimeInRetry)
+			time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
 		}
 		retryCount++
 
@@ -255,7 +253,7 @@ func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 		log.Debugf("stdout=%s", stdout)
 		log.Debugf("stderr=%s", stderr)
 
-		if api.config.Get().MasterCount == 1 {
+		if config.Get().MasterCount == 1 {
 			stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/one-master-mode.sh")
 			if err != nil {
 				log.WithError(err).Fatal(stderr)
@@ -274,17 +272,17 @@ func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 	log.Info("Init first master node...")
 
-	serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, 1)
+	serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, 1)
 
 	retryCount := 0
 
 	for {
-		if retryCount > api.config.Get().MasterServers.RetryTimeLimit {
+		if retryCount > config.Get().MasterServers.RetryTimeLimit {
 			return errRetryLimitReached
 		}
 
 		if retryCount > 0 {
-			time.Sleep(api.config.Get().MasterServers.WaitTimeInRetry)
+			time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
 		}
 		retryCount++
 
@@ -299,10 +297,10 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 
 		loadBalancerIP := serverIP
 
-		if api.config.Get().MasterCount > 1 {
+		if config.Get().MasterCount > 1 {
 			log.Info("Waiting for loadBalancer...")
 
-			loadBalancerIP, err = api.waitForLoadBalancer(api.config.Get().ClusterName)
+			loadBalancerIP, err = api.waitForLoadBalancer(config.Get().ClusterName)
 			if err != nil {
 				log.WithError(err).Error()
 
@@ -351,24 +349,24 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 
 	k8sLoadBalancerType, _, err := api.hcloudClient.LoadBalancerType.Get(
 		api.ctx,
-		api.config.Get().MasterLoadBalancer.LoadBalancerType,
+		config.Get().MasterLoadBalancer.LoadBalancerType,
 	)
 	if err != nil {
 		return err
 	}
 
-	k8sLocation, _, err := api.hcloudClient.Location.Get(api.ctx, api.config.Get().Location)
+	k8sLocation, _, err := api.hcloudClient.Location.Get(api.ctx, config.Get().Location)
 	if err != nil {
 		return err
 	}
 
-	k8sNetwork, _, err := api.hcloudClient.Network.Get(api.ctx, api.config.Get().ClusterName)
+	k8sNetwork, _, err := api.hcloudClient.Network.Get(api.ctx, config.Get().ClusterName)
 	if err != nil {
 		return err
 	}
 
-	ListenPort := api.config.Get().MasterLoadBalancer.ListenPort
-	DestinationPort := api.config.Get().MasterLoadBalancer.DestinationPort
+	ListenPort := config.Get().MasterLoadBalancer.ListenPort
+	DestinationPort := config.Get().MasterLoadBalancer.DestinationPort
 
 	k8sService := hcloud.LoadBalancerCreateOptsService{
 		Protocol:        hcloud.LoadBalancerServiceProtocolTCP,
@@ -377,7 +375,7 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 	}
 
 	_, _, err = api.hcloudClient.LoadBalancer.Create(api.ctx, hcloud.LoadBalancerCreateOpts{
-		Name:             api.config.Get().ClusterName,
+		Name:             config.Get().ClusterName,
 		LoadBalancerType: k8sLoadBalancerType,
 		Location:         k8sLocation,
 		Network:          k8sNetwork,
@@ -409,40 +407,40 @@ func (api *ApplicationAPI) attachToBalancer(server hcloud.ServerCreateResult, ba
 func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 	log.Info("Creating servers...")
 
-	serverType, _, err := api.hcloudClient.ServerType.Get(api.ctx, api.config.Get().MasterServers.ServerType)
+	serverType, _, err := api.hcloudClient.ServerType.Get(api.ctx, config.Get().MasterServers.ServerType)
 	if err != nil {
 		return err
 	}
 
-	serverImage, _, err := api.hcloudClient.Image.Get(api.ctx, api.config.Get().MasterServers.Image)
+	serverImage, _, err := api.hcloudClient.Image.Get(api.ctx, config.Get().MasterServers.Image)
 	if err != nil {
 		return err
 	}
 
-	k8sNetwork, _, err := api.hcloudClient.Network.Get(api.ctx, api.config.Get().ClusterName)
+	k8sNetwork, _, err := api.hcloudClient.Network.Get(api.ctx, config.Get().ClusterName)
 	if err != nil {
 		return err
 	}
 
-	k8sSSHKey, _, err := api.hcloudClient.SSHKey.Get(api.ctx, api.config.Get().ClusterName)
+	k8sSSHKey, _, err := api.hcloudClient.SSHKey.Get(api.ctx, config.Get().ClusterName)
 	if err != nil {
 		return err
 	}
 
-	k8sDatacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, api.config.Get().Datacenter)
+	k8sDatacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, config.Get().Datacenter)
 	if err != nil {
 		return err
 	}
 
 	startAfterCreate := true
 
-	k8sLoadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(api.ctx, api.config.Get().ClusterName)
+	k8sLoadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(api.ctx, config.Get().ClusterName)
 	if err != nil {
 		return err
 	}
 
-	for i := 1; i <= api.config.Get().MasterCount; i++ {
-		serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, i)
+	for i := 1; i <= config.Get().MasterCount; i++ {
+		serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, i)
 
 		log := log.WithField("server", serverName)
 
@@ -452,7 +450,7 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 			Image:            serverImage,
 			Networks:         []*hcloud.Network{k8sNetwork},
 			SSHKeys:          []*hcloud.SSHKey{k8sSSHKey},
-			Labels:           api.config.Get().MasterServers.Labels,
+			Labels:           config.Get().MasterServers.Labels,
 			Datacenter:       k8sDatacenter,
 			StartAfterCreate: &startAfterCreate,
 		}
@@ -470,15 +468,15 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 		retryCount := 0
 
 		for {
-			if retryCount > api.config.Get().MasterServers.RetryTimeLimit {
+			if retryCount > config.Get().MasterServers.RetryTimeLimit {
 				return errRetryLimitReached
 			}
 
-			if api.config.Get().MasterCount > 1 {
+			if config.Get().MasterCount > 1 {
 				err = api.attachToBalancer(serverResults, k8sLoadBalancer)
 				if err != nil {
 					log.WithError(err).Debug()
-					time.Sleep(api.config.Get().MasterServers.WaitTimeInRetry)
+					time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
 
 					continue
 				}
@@ -494,13 +492,13 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 func (api *ApplicationAPI) createSSHKey() error {
 	log.Info("Creating sshKey...")
 
-	publicKey, err := ioutil.ReadFile(api.config.Get().SSHPublicKey)
+	publicKey, err := ioutil.ReadFile(config.Get().SSHPublicKey)
 	if err != nil {
 		return err
 	}
 
 	_, _, err = api.hcloudClient.SSHKey.Create(api.ctx, hcloud.SSHKeyCreateOpts{
-		Name:      api.config.Get().ClusterName,
+		Name:      config.Get().ClusterName,
 		PublicKey: string(publicKey),
 	})
 	if err != nil {
@@ -513,13 +511,13 @@ func (api *ApplicationAPI) createSSHKey() error {
 func (api *ApplicationAPI) createNetwork() error {
 	log.Info("Creating network...")
 
-	_, IPRangeNet, err := net.ParseCIDR(api.config.Get().IPRange)
+	_, IPRangeNet, err := net.ParseCIDR(config.Get().IPRange)
 	if err != nil {
 		return err
 	}
 
 	k8sNetwork, _, err := api.hcloudClient.Network.Create(api.ctx, hcloud.NetworkCreateOpts{
-		Name:    api.config.Get().ClusterName,
+		Name:    config.Get().ClusterName,
 		IPRange: IPRangeNet,
 	})
 	if err != nil {
@@ -555,7 +553,7 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 		return errors.Wrap(err, "error in create sshkey")
 	}
 
-	if api.config.Get().MasterCount > 1 {
+	if config.Get().MasterCount > 1 {
 		err = api.createLoadBalancer()
 		if err != nil {
 			return errors.Wrap(err, "error in create loadbalancer")
@@ -577,8 +575,8 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 		log.WithError(err).Warn("error in saving kubeconfig")
 	}
 
-	for i := 2; i <= api.config.Get().MasterCount; i++ {
-		serverName := fmt.Sprintf(api.config.Get().MasterServers.NamePattern, i)
+	for i := 2; i <= config.Get().MasterCount; i++ {
+		serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, i)
 
 		log := log.WithField("server", serverName)
 
@@ -601,7 +599,7 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 	log.Info("Deleting cluster...")
 
-	k8sNetwork, _, _ := api.hcloudClient.Network.Get(api.ctx, api.config.Get().ClusterName)
+	k8sNetwork, _, _ := api.hcloudClient.Network.Get(api.ctx, config.Get().ClusterName)
 	if k8sNetwork != nil {
 		_, err := api.hcloudClient.Network.Delete(api.ctx, k8sNetwork)
 		if err != nil {
@@ -609,7 +607,7 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 		}
 	}
 
-	k8sSSHKey, _, _ := api.hcloudClient.SSHKey.Get(api.ctx, api.config.Get().ClusterName)
+	k8sSSHKey, _, _ := api.hcloudClient.SSHKey.Get(api.ctx, config.Get().ClusterName)
 	if k8sSSHKey != nil {
 		_, err := api.hcloudClient.SSHKey.Delete(api.ctx, k8sSSHKey)
 		if err != nil {
@@ -617,7 +615,7 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 		}
 	}
 
-	k8sLoadBalancer, _, _ := api.hcloudClient.LoadBalancer.Get(api.ctx, api.config.Get().ClusterName)
+	k8sLoadBalancer, _, _ := api.hcloudClient.LoadBalancer.Get(api.ctx, config.Get().ClusterName)
 	if k8sLoadBalancer != nil {
 		_, err := api.hcloudClient.LoadBalancer.Delete(api.ctx, k8sLoadBalancer)
 		if err != nil {
@@ -657,7 +655,7 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string, string, error) {
 	log.Debugf("ipAddress=%s,command=%s", ipAddress, command)
 
-	privateKey, err := ioutil.ReadFile(api.config.Get().SSHPrivateKey)
+	privateKey, err := ioutil.ReadFile(config.Get().SSHPrivateKey)
 	if err != nil {
 		return "", "", err
 	}
@@ -754,7 +752,7 @@ func (api *ApplicationAPI) ListConfigurations() {
 }
 
 func (api *ApplicationAPI) getDeploymentValues() string {
-	resultYAML, err := yaml.Marshal(api.config.Get())
+	resultYAML, err := yaml.Marshal(config.Get())
 	if err != nil {
 		log.Fatal(err)
 	}
