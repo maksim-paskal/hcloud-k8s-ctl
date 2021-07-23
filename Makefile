@@ -4,6 +4,9 @@ action=list-configurations
 test:
 	./scripts/validate-license.sh
 	go mod tidy
+	go test --race ./cmd
+	go test --race ./pkg/config -args --config=config_test.yaml
+	go test --race ./pkg/api
 	golangci-lint run -v
 create-cluster:
 	make test

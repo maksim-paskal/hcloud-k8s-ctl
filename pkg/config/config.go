@@ -71,6 +71,9 @@ type masterLoadBalancer struct {
 	DestinationPort  int
 }
 
+//nolint:gochecknoglobals
+var config = Type{}
+
 type Type struct {
 	ClusterName        string             `yaml:"clusterName"`
 	KubeConfigPath     string             `yaml:"kubeConfigPath"`
@@ -87,10 +90,6 @@ type Type struct {
 	DeploymentsConfig  deploymentsConfig  `yaml:"deploymentsConfig"`
 }
 
-type ApplicationConfig struct {
-	config Type
-}
-
 //nolint:gochecknoglobals
 var cliArguments = cliArgs{
 	LogLevel:   flag.String("log.level", "INFO", "logging level"),
@@ -98,11 +97,7 @@ var cliArguments = cliArgs{
 	Action:     flag.String("action", "", "create|delete"),
 }
 
-func NewApplicationConfig() *ApplicationConfig {
-	return &ApplicationConfig{}
-}
-
-func (c *ApplicationConfig) defaultConfig() Type { //nolint:funlen
+func defaultConfig() Type { //nolint:funlen
 	privateKey := "~/.ssh/id_rsa"
 	kubeConfigPath := "~/.kube/hcloud"
 
@@ -174,44 +169,44 @@ func (c *ApplicationConfig) defaultConfig() Type { //nolint:funlen
 	}
 }
 
-func (c *ApplicationConfig) Load() error {
+func Load() error {
 	configByte, err := ioutil.ReadFile(*cliArguments.ConfigPath)
 	if err != nil {
 		return err
 	}
 
-	c.config = c.defaultConfig()
+	config = defaultConfig()
 
-	if len(c.config.HetznerToken) == 0 {
+	if len(config.HetznerToken) == 0 {
 		auth, err := ioutil.ReadFile(".hcloudauth")
 		if err != nil {
 			log.Debug(err)
 		} else {
-			c.config.HetznerToken = string(auth)
+			config.HetznerToken = string(auth)
 		}
 	}
 
-	err = yaml.Unmarshal(configByte, &c.config)
+	err = yaml.Unmarshal(configByte, &config)
 	if err != nil {
 		return err
 	}
 
-	c.config.KubeConfigPath, err = c.expand(c.config.KubeConfigPath)
+	config.KubeConfigPath, err = expand(config.KubeConfigPath)
 	if err != nil {
 		return err
 	}
 
-	c.config.SSHPrivateKey, err = c.expand(c.config.SSHPrivateKey)
+	config.SSHPrivateKey, err = expand(config.SSHPrivateKey)
 	if err != nil {
 		return err
 	}
 
-	c.config.SSHPublicKey, err = c.expand(c.config.SSHPublicKey)
+	config.SSHPublicKey, err = expand(config.SSHPublicKey)
 	if err != nil {
 		return err
 	}
 
-	_, _, err = net.ParseCIDR(c.config.IPRange)
+	_, _, err = net.ParseCIDR(config.IPRange)
 	if err != nil {
 		return err
 	}
@@ -219,12 +214,12 @@ func (c *ApplicationConfig) Load() error {
 	return nil
 }
 
-func (c *ApplicationConfig) Get() *Type {
-	return &c.config
+func Get() *Type {
+	return &config
 }
 
-func (c *ApplicationConfig) String() string {
-	out, err := yaml.Marshal(c.config)
+func String() string {
+	out, err := yaml.Marshal(config)
 	if err != nil {
 		return fmt.Sprintf("ERROR: %t", err)
 	}
@@ -232,7 +227,7 @@ func (c *ApplicationConfig) String() string {
 	return string(out)
 }
 
-func (c *ApplicationConfig) expand(path string) (string, error) {
+func expand(path string) (string, error) {
 	if len(path) == 0 || path[0] != '~' {
 		return path, nil
 	}

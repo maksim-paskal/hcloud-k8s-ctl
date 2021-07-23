@@ -41,28 +41,25 @@ func main() { //nolint:cyclop
 
 	log.SetReportCaller(true)
 
-	applicationConfig := config.NewApplicationConfig()
-
-	err := applicationConfig.Load()
-	if err != nil {
+	if err := config.Load(); err != nil {
 		log.WithError(err).Fatal("error loading config")
 	}
 
-	logLevel, err := log.ParseLevel(*applicationConfig.Get().CliArgs.LogLevel)
+	logLevel, err := log.ParseLevel(*config.Get().CliArgs.LogLevel)
 	if err != nil {
 		log.WithError(err).Fatal()
 	}
 
 	log.SetLevel(logLevel)
 
-	log.Infof("Loaded config:\n%s\n", applicationConfig.String())
+	log.Infof("Loaded config:\n%s\n", config.String())
 
-	applicationAPI, err := api.NewApplicationAPI(applicationConfig)
+	applicationAPI, err := api.NewApplicationAPI()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	switch strings.ToLower(*applicationConfig.Get().CliArgs.Action) {
+	switch strings.ToLower(*config.Get().CliArgs.Action) {
 	case "create":
 		err = applicationAPI.NewCluster()
 		if err != nil {
