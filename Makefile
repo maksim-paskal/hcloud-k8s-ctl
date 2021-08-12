@@ -21,8 +21,7 @@ list-configurations:
 run:
 	go run -race ./cmd -action=$(action) -log.level=DEBUG
 build:
-	@./scripts/build-all.sh
-	go mod tidy
+	goreleaser build --rm-dist --skip-validate
 apply-yaml:
 	kubectl apply -f ./scripts
 apply-test:
