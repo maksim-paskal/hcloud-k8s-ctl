@@ -1,0 +1,25 @@
+archives:
+- format: binary
+builds:
+- dir: ./cmd
+  env:
+  - CGO_ENABLED=0
+  flags:
+  - -trimpath
+  ldflags:
+  - -X main.gitVersion={{.Version}}-{{.ShortCommit}}-{{.Timestamp}}
+  goos:
+  - linux
+  - darwin
+  goarch:
+  - amd64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
