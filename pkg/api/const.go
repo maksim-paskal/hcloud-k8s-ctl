@@ -30,4 +30,4 @@ mv ./%s/scripts ./scripts
 chmod +x /root/scripts/*.sh
 `
 
-const kubeconfigFileMode = fs.FileMode(0600)
+const kubeconfigFileMode = fs.FileMode(0o600)
