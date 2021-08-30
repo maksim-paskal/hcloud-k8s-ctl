@@ -1,6 +1,6 @@
 module github.com/maksim-paskal/hcloud-k8s-ctl
 
-go 1.16
+go 1.17
 
 require (
 	github.com/hetznercloud/hcloud-go v1.25.0
@@ -11,3 +11,5 @@ require (
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
 )
+
+require golang.org/x/sys v0.0.0-20201119102817-f84b799fce68 // indirect
