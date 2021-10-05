@@ -93,7 +93,7 @@ type Type struct {
 //nolint:gochecknoglobals
 var cliArguments = cliArgs{
 	LogLevel:   flag.String("log.level", "INFO", "logging level"),
-	ConfigPath: flag.String("config", "config.yaml", "config path"),
+	ConfigPath: flag.String("config", envDefault("CONFIG", "config.yaml"), "config path"),
 	Action:     flag.String("action", "", "create|delete"),
 }
 
@@ -238,4 +238,13 @@ func expand(path string) (string, error) {
 	}
 
 	return filepath.Join(usr.HomeDir, path[1:]), nil
+}
+
+func envDefault(name string, defaultValue string) string {
+	e := os.Getenv(name)
+	if len(e) > 0 {
+		return e
+	}
+
+	return defaultValue
 }
