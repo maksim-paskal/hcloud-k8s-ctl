@@ -3,11 +3,12 @@ action=list-configurations
 
 test:
 	./scripts/validate-license.sh
+	go fmt ./cmd/... ./pkg/...
 	go mod tidy
-	go test --race ./cmd
-	go test --race ./pkg/config -args --config=config_test.yaml
-	go test --race ./pkg/api
 	golangci-lint run -v
+	CONFIG=config_test.yaml go test -race -coverprofile coverage.out ./cmd/... ./pkg/...
+coverage:
+	go tool cover -html=coverage.out
 create-cluster:
 	make test
 	make delete-cluster
