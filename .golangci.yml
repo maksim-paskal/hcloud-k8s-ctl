@@ -9,3 +9,4 @@ linters:
   disable:
   - exhaustivestruct
   - wrapcheck
+  - varnamelen

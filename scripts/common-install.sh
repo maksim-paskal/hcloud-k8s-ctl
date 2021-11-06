@@ -67,7 +67,7 @@ sysctl -p
 apt-get install -y kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBERNETES_VERSION}-00 kubectl=${KUBERNETES_VERSION}-00
 apt-mark hold kubelet kubeadm kubectl
 
-INTERNAL_IP=`hostname -I | awk '{print $2}'`
+INTERNAL_IP=$(hostname -I | awk '{print $2}')
 cat <<EOF | tee /etc/default/kubelet
 KUBELET_EXTRA_ARGS=--cloud-provider=external --node-ip=$INTERNAL_IP --v=2
 EOF
