@@ -40,17 +40,17 @@ kubeadm init --upload-certs --config=/root/scripts/kubeadm-config.yaml
 export KUBECONFIG=/etc/kubernetes/admin.conf
 
 # save token for cloud manager and csi
-kubectl -n kube-system create secret generic hcloud --from-literal=token=$HCLOUD_TOKEN
-kubectl -n kube-system create secret generic hcloud-csi --from-literal=token=$HCLOUD_TOKEN
+kubectl -n kube-system create secret generic hcloud --from-literal=token="$HCLOUD_TOKEN"
+kubectl -n kube-system create secret generic hcloud-csi --from-literal=token="$HCLOUD_TOKEN"
 
 # create token for nodes
 cp /root/scripts/common-install.sh /root/scripts/cloud-init.sh
 kubeadm token create --ttl=0 --print-join-command >> /root/scripts/cloud-init.sh
 
 # create autoscaler configuration
-HCLOUD_CLOUD_INIT=`cat /root/scripts/cloud-init.sh | base64 -w 0`
-kubectl -n kube-system create configmap hcloud-init --from-literal=bootstrap=$HCLOUD_CLOUD_INIT
+HCLOUD_CLOUD_INIT=$(base64 -w 0 < /root/scripts/cloud-init.sh)
+kubectl -n kube-system create configmap hcloud-init --from-literal=bootstrap="$HCLOUD_CLOUD_INIT"
 
 # create token for master
-kubeadm token create --print-join-command --certificate-key `kubeadm init phase upload-certs --upload-certs | tail -1` > /root/scripts/join-master.sh
+kubeadm token create --print-join-command --certificate-key "$(kubeadm init phase upload-certs --upload-certs | tail -1)" > /root/scripts/join-master.sh
 
