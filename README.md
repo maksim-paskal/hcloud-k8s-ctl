@@ -30,6 +30,7 @@ This will create 3 instance with 1 load balancer for kubernetes control plane an
 - [Container Storage Interface driver for Hetzner Cloud](https://github.com/hetznercloud/csi-driver)
 - [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
 - [Simple CSR approver for Kubernetes](https://github.com/kontena/kubelet-rubber-stamp)
+- [Docker registry (optional)](https://github.com/distribution/distribution)
 
 for HA needs odd number of master nodes (minimum 3) <https://etcd.io/docs/v3.4/faq/#why-an-odd-number-of-cluster-members>
 

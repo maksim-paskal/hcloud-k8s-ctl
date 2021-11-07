@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/hetznercloud/hcloud-go/hcloud"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -43,6 +44,7 @@ type kubernetesEnv struct {
 }
 
 type deploymentsConfig struct {
+	Registry         registryConfig
 	AutoscalerConfig autoscalerConfig
 	CcmConfig        ccmConfig
 }
@@ -53,6 +55,12 @@ type autoscalerConfig struct {
 
 type ccmConfig struct {
 	Env []kubernetesEnv
+}
+
+type registryConfig struct {
+	Enabled  bool
+	Replicas int
+	Env      map[string]string
 }
 
 type masterServers struct {
@@ -82,6 +90,7 @@ type Type struct {
 	SSHPrivateKey      string             `yaml:"sshPrivateKey"`
 	SSHPublicKey       string             `yaml:"sshPublicKey"`
 	MasterCount        int                `yaml:"masterCount"`
+	NetworkZone        hcloud.NetworkZone `yaml:"networkZone"`
 	Location           string             `yaml:"location"`
 	Datacenter         string             `yaml:"datacenter"`
 	MasterServers      masterServers      `yaml:"masterServers"`
@@ -107,6 +116,7 @@ func defaultConfig() Type { //nolint:funlen
 	return Type{
 		HetznerToken:   os.Getenv("HCLOUD_TOKEN"),
 		ClusterName:    "k8s",
+		NetworkZone:    hcloud.NetworkZoneEUCentral,
 		Location:       defaultLocation,
 		Datacenter:     defaultDatacenter,
 		KubeConfigPath: kubeConfigPath,
@@ -164,6 +174,10 @@ func defaultConfig() Type { //nolint:funlen
 						Value: "{{ lower .Values.location }}",
 					},
 				},
+			},
+			Registry: registryConfig{
+				Enabled:  false,
+				Replicas: defaultRegistryReplicas,
 			},
 		},
 	}

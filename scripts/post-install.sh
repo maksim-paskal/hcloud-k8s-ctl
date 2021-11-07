@@ -15,14 +15,14 @@
 # limitations under the License.
 set -ex
 
-: "${KUBECONFIG_PATH:='/etc/kubernetes/admin.conf'}"
-: "${SCRTIPT_PATH:='/root'}"
+: ${KUBECONFIG_PATH:='/etc/kubernetes/admin.conf'}
+: ${SCRIPT_PATH:='/root'}
 
 export KUBECONFIG=$KUBECONFIG_PATH
 
 kubectl annotate node --overwrite -lnode-role.kubernetes.io/master cluster-autoscaler.kubernetes.io/scale-down-disabled=true
 
-echo "$VALUES" | base64 -d > $SCRTIPT_PATH/scripts/chart/values.yaml
+echo "$VALUES" | base64 -d > $SCRIPT_PATH/values.yaml
 
 # install helm for kubernetes deploymens
 curl -o helm.tar.gz https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz
@@ -31,6 +31,6 @@ mv linux-amd64/helm /usr/local/bin/helm
 rm helm.tar.gz
 rm -rf linux-amd64
 
-helm template $SCRTIPT_PATH/scripts/chart | kubectl apply -f -
+helm template $SCRIPT_PATH/scripts/chart --values=$SCRIPT_PATH/values.yaml | kubectl apply -f -
 
-kubectl -n kube-system patch deployment coredns --patch "$(cat $SCRTIPT_PATH/scripts/patch-coredns.yaml)"
+kubectl -n kube-system patch deployment coredns --patch "$(cat $SCRIPT_PATH/scripts/patch-coredns.yaml)"
