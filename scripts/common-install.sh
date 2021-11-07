@@ -16,21 +16,26 @@
 set -ex
 
 export KUBERNETES_VERSION=1.21.1
+export DOCKER_VERSION=5:20.10.10~3-0~ubuntu-focal
 export DEBIAN_FRONTEND=noninteractive
 export HOME=/root/
 
-apt-get update && apt-get install -y apt-transport-https ca-certificates curl software-properties-common
-
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
-cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-deb https://apt.kubernetes.io/ kubernetes-xenial main
-EOF
-add-apt-repository   "deb [arch=amd64] https://download.docker.com/linux/ubuntu   $(lsb_release -cs)   stable"
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
-add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
 apt update
-apt install -y docker-ce
+apt install -y apt-transport-https ca-certificates curl software-properties-common
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+
+cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
+cat <<EOF >/etc/apt/sources.list.d/docker.list
+deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable
+EOF
+
+apt update
+apt install -y docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io
+apt-mark hold docker-ce docker-ce-cli containerd.io
 
 mkdir -p /etc/docker/
 cat > /etc/docker/daemon.json <<EOF
@@ -50,7 +55,8 @@ cat > /etc/docker/daemon.json <<EOF
       "Soft": -1
     }
   },
-  "storage-driver": "overlay2"
+  "storage-driver": "overlay2",
+  "insecure-registries": ["10.100.0.11:5000"]
 }
 EOF
 mkdir -p /etc/systemd/system/docker.service.d

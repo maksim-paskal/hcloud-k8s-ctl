@@ -527,7 +527,7 @@ func (api *ApplicationAPI) createNetwork() error {
 	k8sNetworkSubnet := hcloud.NetworkSubnet{
 		Type:        hcloud.NetworkSubnetTypeServer,
 		IPRange:     IPRangeNet,
-		NetworkZone: hcloud.NetworkZoneEUCentral,
+		NetworkZone: config.Get().NetworkZone,
 	}
 
 	_, _, err = api.hcloudClient.Network.AddSubnet(api.ctx, k8sNetwork, hcloud.NetworkAddSubnetOpts{

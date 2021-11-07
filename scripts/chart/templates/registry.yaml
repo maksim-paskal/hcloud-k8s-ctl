@@ -1,0 +1,86 @@
+{{ if .Values.deploymentsConfig.registry.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-registry-env
+  namespace: kube-system
+data:
+  REGISTRY_HTTP_SECRET: {{ .Values.deploymentsConfig.registry.secret | quote }}
+  REGISTRY_HTTP_ADDR: "0.0.0.0:5000"
+  REGISTRY_LOG_ACCESSLOG_DISABLED: "true"
+  REGISTRY_LOG_FORMATTER: "json"
+  REGISTRY_LOG_LEVEL: "warn"
+{{- range $key, $val := .Values.deploymentsConfig.registry.env }}
+  {{ $key }}: {{ tpl $val $ | quote }}
+{{- end}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: docker-registry
+  namespace: kube-system
+  labels:
+    app: docker-registry
+spec:
+  selector:
+    matchLabels:
+      app: docker-registry
+  replicas: {{ .Values.deploymentsConfig.registry.replicas }}
+  template:
+    metadata:
+      labels:
+        app: docker-registry
+    spec:
+      priorityClassName: system-cluster-critical
+      tolerations:
+      - effect: NoSchedule
+        key: node-role.kubernetes.io/master
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - docker-registry
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: registry
+        resources:
+{{ toYaml .Values.deploymentsConfig.registry.resources | indent 9 }}
+        image: {{ .Values.deploymentsConfig.registry.image }}
+        imagePullPolicy: {{ .Values.deploymentsConfig.registry.imagePullPolicy }}
+        envFrom:
+        - configMapRef:
+            name: docker-registry-env
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry
+  namespace: kube-system
+  labels:
+    app: docker-registry
+spec:
+  type: ClusterIP
+  clusterIP: {{ .Values.deploymentsConfig.registry.clusterIP }}
+  ports:
+  - name: registry
+    port: 5000
+    targetPort: 5000
+    protocol: TCP
+  selector:
+    app: docker-registry
+---
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: docker-registry
+  namespace: kube-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: docker-registry
+{{ end }}
