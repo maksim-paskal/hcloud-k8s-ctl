@@ -21,5 +21,4 @@ const (
 	retryTimeLimit          = 20
 	defaultLocation         = "fsn1"
 	defaultDatacenter       = "fsn1-dc14"
-	defaultRegistryReplicas = 2
 )

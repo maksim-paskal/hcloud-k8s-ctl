@@ -20,8 +20,10 @@ set -ex
 
 export KUBECONFIG=$KUBECONFIG_PATH
 
+# create annotation for recent node deletion
 kubectl annotate node --overwrite -lnode-role.kubernetes.io/master cluster-autoscaler.kubernetes.io/scale-down-disabled=true
 
+# create custom user values
 echo "$VALUES" | base64 -d > $SCRIPT_PATH/values.yaml
 
 # install helm for kubernetes deploymens
@@ -31,6 +33,8 @@ mv linux-amd64/helm /usr/local/bin/helm
 rm helm.tar.gz
 rm -rf linux-amd64
 
-helm template $SCRIPT_PATH/scripts/chart --values=$SCRIPT_PATH/values.yaml | kubectl apply -f -
+# install helm chart
+helm upgrade --install hcloud-k8s-ctl --namespace kube-system $SCRIPT_PATH/scripts/chart --values=$SCRIPT_PATH/values.yaml
 
+# patch coredns
 kubectl -n kube-system patch deployment coredns --patch "$(cat $SCRIPT_PATH/scripts/patch-coredns.yaml)"
