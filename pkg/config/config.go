@@ -38,31 +38,6 @@ type cliArgs struct {
 	Action     *string
 }
 
-type kubernetesEnv struct {
-	Name  string
-	Value string
-}
-
-type deploymentsConfig struct {
-	Registry         registryConfig
-	AutoscalerConfig autoscalerConfig
-	CcmConfig        ccmConfig
-}
-
-type autoscalerConfig struct {
-	Args []string
-}
-
-type ccmConfig struct {
-	Env []kubernetesEnv
-}
-
-type registryConfig struct {
-	Enabled  bool
-	Replicas int
-	Env      map[string]string
-}
-
 type masterServers struct {
 	NamePattern       string
 	ServerType        string
@@ -72,6 +47,8 @@ type masterServers struct {
 	RetryTimeLimit    int
 	ServersInitParams masterServersInitParams
 }
+
+type emptyStruct struct{}
 
 type masterLoadBalancer struct {
 	LoadBalancerType string
@@ -96,7 +73,7 @@ type Type struct {
 	MasterServers      masterServers      `yaml:"masterServers"`
 	MasterLoadBalancer masterLoadBalancer `yaml:"masterLoadBalancer"`
 	CliArgs            cliArgs            `yaml:"cliArgs"`
-	DeploymentsConfig  deploymentsConfig  `yaml:"deploymentsConfig"`
+	DeploymentsConfig  interface{}        `yaml:"deploymentsConfig"` // values.yaml in chart
 }
 
 //nolint:gochecknoglobals
@@ -106,7 +83,7 @@ var cliArguments = cliArgs{
 	Action:     flag.String("action", "", "create|delete"),
 }
 
-func defaultConfig() Type { //nolint:funlen
+func defaultConfig() Type {
 	privateKey := "~/.ssh/id_rsa"
 	kubeConfigPath := "~/.kube/hcloud"
 
@@ -141,45 +118,7 @@ func defaultConfig() Type { //nolint:funlen
 			ListenPort:       loadBalancerDefaultPort,
 			DestinationPort:  loadBalancerDefaultPort,
 		},
-		DeploymentsConfig: deploymentsConfig{
-			AutoscalerConfig: autoscalerConfig{
-				Args: []string{
-					"--v=4",
-					"--cloud-provider=hetzner",
-					"--stderrthreshold=info",
-					"--expander=least-waste",
-					"--scale-down-enabled=true",
-					"--skip-nodes-with-local-storage=false",
-					"--skip-nodes-with-system-pods=false",
-					"--scale-down-utilization-threshold=0.8",
-					"--nodes=0:20:CX11:{{ upper .Values.location }}:cx11",
-					"--nodes=0:20:CX21:{{ upper .Values.location }}:cx21",
-					"--nodes=0:20:CPX31:{{ upper .Values.location }}:cpx31",
-					"--nodes=0:20:CPX41:{{ upper .Values.location }}:cpx41",
-					"--nodes=0:20:CPX51:{{ upper .Values.location }}:cpx51",
-				},
-			},
-			CcmConfig: ccmConfig{
-				Env: []kubernetesEnv{
-					{
-						Name:  "HCLOUD_NETWORK",
-						Value: "{{ .Values.clusterName }}",
-					},
-					{
-						Name:  "HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP",
-						Value: "true",
-					},
-					{
-						Name:  "HCLOUD_LOAD_BALANCERS_LOCATION",
-						Value: "{{ lower .Values.location }}",
-					},
-				},
-			},
-			Registry: registryConfig{
-				Enabled:  false,
-				Replicas: defaultRegistryReplicas,
-			},
-		},
+		DeploymentsConfig: emptyStruct{},
 	}
 }
 

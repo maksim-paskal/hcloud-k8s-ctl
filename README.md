@@ -82,3 +82,17 @@ hcloud-k8s-ctl -action=list-configurations
 ```bash
 hcloud-k8s-ctl -action=delete
 ```
+
+## To install NFS provisioner
+
+for testing purposes you can add [NFS Server Provisioner](https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner) - please do not use it in production
+
+```bash
+# deprecated chart but still works
+helm install \
+--create-namespace \
+-n nfs-server-provisioner \
+nfs-server-provisioner \
+stable/nfs-server-provisioner \
+--set persistence.enabled=true
+```
