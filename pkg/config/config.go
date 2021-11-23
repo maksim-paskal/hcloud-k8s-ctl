@@ -36,6 +36,7 @@ type cliArgs struct {
 	LogLevel   *string
 	ConfigPath *string
 	Action     *string
+	Command    *string
 }
 
 type masterServers struct {
@@ -80,7 +81,8 @@ type Type struct {
 var cliArguments = cliArgs{
 	LogLevel:   flag.String("log.level", "INFO", "logging level"),
 	ConfigPath: flag.String("config", envDefault("CONFIG", "config.yaml"), "config path"),
-	Action:     flag.String("action", "", "create|delete"),
+	Action:     flag.String("action", "", "create|delete|list-configurations|patch-cluster|adhoc"),
+	Command:    flag.String("command", "", "command to adhoc action"),
 }
 
 func defaultConfig() Type {
