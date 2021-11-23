@@ -71,6 +71,12 @@ func main() { //nolint:cyclop
 		applicationAPI.ListConfigurations()
 	case "patch-cluster":
 		applicationAPI.PatchClusterDeployment()
+	case "adhoc":
+		if len(*config.Get().CliArgs.Command) == 0 {
+			log.Fatal("add -command argument")
+		}
+
+		applicationAPI.ExecuteAdHoc(*config.Get().CliArgs.Command)
 	default:
 		log.Fatal("unknown action")
 	}

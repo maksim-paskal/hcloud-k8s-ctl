@@ -623,28 +623,23 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 		}
 	}
 
-	// delete master nodes
-	nodeServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+	// get master nodes
+	allServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: "role=master",
 		},
 	})
 
-	for _, nodeServer := range nodeServers {
-		_, err := api.hcloudClient.Server.Delete(api.ctx, nodeServer)
-		if err != nil {
-			log.WithError(err).Warnf("error deleting Server=%s", nodeServer.Name)
-		}
-	}
-
-	// delete worker nodes
-	nodeServers, _, _ = api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+	// get worker nodes
+	nodeServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: "hcloud/node-group",
 		},
 	})
 
-	for _, nodeServer := range nodeServers {
+	allServers = append(allServers, nodeServers...)
+
+	for _, nodeServer := range allServers {
 		_, err := api.hcloudClient.Server.Delete(api.ctx, nodeServer)
 		if err != nil {
 			log.WithError(err).Warnf("error deleting Server=%s", nodeServer.Name)
@@ -768,4 +763,40 @@ func (api *ApplicationAPI) PatchClusterDeployment() {
 	}
 
 	log.Info("Cluster pached!")
+}
+
+func (api *ApplicationAPI) ExecuteAdHoc(command string) {
+	allServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+		ListOpts: hcloud.ListOpts{
+			LabelSelector: "role=master",
+		},
+	})
+
+	nodeServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+		ListOpts: hcloud.ListOpts{
+			LabelSelector: "hcloud/node-group",
+		},
+	})
+
+	allServers = append(allServers, nodeServers...)
+
+	for _, server := range allServers {
+		serverIP, err := server.PublicNet.IPv4.IP.MarshalText()
+		if err != nil {
+			log.WithError(err).Error("can not get server IP")
+
+			continue
+		}
+
+		stdout, stderr, err := api.execCommand(string(serverIP), command)
+		if err != nil {
+			log.WithError(err).Error(stderr)
+
+			continue
+		}
+
+		log := log.WithField("serverIP", string(serverIP))
+
+		log.Infof("stdout=%s,stderr=%s", stdout, stderr)
+	}
 }
