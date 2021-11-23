@@ -23,6 +23,10 @@ export HOME=/root/
 apt update
 apt install -y apt-transport-https ca-certificates curl software-properties-common nfs-common
 
+# disable 111/udp 111/tcp port
+systemctl stop rpcbind.socket
+systemctl disable rpcbind.socket
+
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
 
