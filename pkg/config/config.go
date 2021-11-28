@@ -40,13 +40,14 @@ type cliArgs struct {
 }
 
 type masterServers struct {
-	NamePattern       string
-	ServerType        string
-	Image             string
-	Labels            map[string]string
-	WaitTimeInRetry   time.Duration
-	RetryTimeLimit    int
-	ServersInitParams masterServersInitParams
+	NamePattern        string
+	PlacementGroupName string
+	ServerType         string
+	Image              string
+	Labels             map[string]string
+	WaitTimeInRetry    time.Duration
+	RetryTimeLimit     int
+	ServersInitParams  masterServersInitParams
 }
 
 type emptyStruct struct{}
@@ -104,12 +105,13 @@ func defaultConfig() Type {
 		MasterCount:    masterServersCount,
 		CliArgs:        cliArguments,
 		MasterServers: masterServers{
-			NamePattern:     "master-%d",
-			ServerType:      "cx21",
-			Image:           "ubuntu-20.04",
-			Labels:          serverLabels,
-			WaitTimeInRetry: waitTimeInRetry,
-			RetryTimeLimit:  retryTimeLimit,
+			NamePattern:        "master-%d",
+			PlacementGroupName: "master-placement-group",
+			ServerType:         "cx21",
+			Image:              "ubuntu-20.04",
+			Labels:             serverLabels,
+			WaitTimeInRetry:    waitTimeInRetry,
+			RetryTimeLimit:     retryTimeLimit,
 			ServersInitParams: masterServersInitParams{
 				TarGz:  "https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/main.tar.gz",
 				Folder: "hcloud-k8s-ctl-main",
