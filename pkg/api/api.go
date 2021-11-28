@@ -439,6 +439,14 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 		return err
 	}
 
+	placementGroupResults, _, err := api.hcloudClient.PlacementGroup.Create(api.ctx, hcloud.PlacementGroupCreateOpts{
+		Name: config.Get().MasterServers.PlacementGroupName,
+		Type: hcloud.PlacementGroupTypeSpread,
+	})
+	if err != nil {
+		return err
+	}
+
 	for i := 1; i <= config.Get().MasterCount; i++ {
 		serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, i)
 
@@ -453,6 +461,7 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 			Labels:           config.Get().MasterServers.Labels,
 			Datacenter:       k8sDatacenter,
 			StartAfterCreate: &startAfterCreate,
+			PlacementGroup:   placementGroupResults.PlacementGroup,
 		}
 
 		// install kubelet kubeadm on server start
@@ -596,7 +605,7 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 	return nil
 }
 
-func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
+func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop
 	log.Info("Deleting cluster...")
 
 	k8sNetwork, _, _ := api.hcloudClient.Network.Get(api.ctx, config.Get().ClusterName)
@@ -626,7 +635,7 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 	// get master nodes
 	allServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
-			LabelSelector: "role=master",
+			LabelSelector: api.getMasterLabels(),
 		},
 	})
 
@@ -643,6 +652,14 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint:cyclop
 		_, err := api.hcloudClient.Server.Delete(api.ctx, nodeServer)
 		if err != nil {
 			log.WithError(err).Warnf("error deleting Server=%s", nodeServer.Name)
+		}
+	}
+
+	placementGroup, _, _ := api.hcloudClient.PlacementGroup.Get(api.ctx, config.Get().MasterServers.PlacementGroupName)
+	if placementGroup != nil {
+		_, err := api.hcloudClient.PlacementGroup.Delete(api.ctx, placementGroup)
+		if err != nil {
+			log.WithError(err).Warnf("error deleting PlacementGroup=%s", placementGroup.Name)
 		}
 	}
 }
@@ -768,7 +785,7 @@ func (api *ApplicationAPI) PatchClusterDeployment() {
 func (api *ApplicationAPI) ExecuteAdHoc(command string) {
 	allServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
-			LabelSelector: "role=master",
+			LabelSelector: api.getMasterLabels(),
 		},
 	})
 
@@ -799,4 +816,18 @@ func (api *ApplicationAPI) ExecuteAdHoc(command string) {
 
 		log.Infof("stdout=%s,stderr=%s", stdout, stderr)
 	}
+}
+
+func (api *ApplicationAPI) getMasterLabels() string {
+	result := ""
+
+	for key, val := range config.Get().MasterServers.Labels {
+		if len(result) == 0 {
+			result = fmt.Sprintf("%s=%s", key, val)
+		} else {
+			result = fmt.Sprintf("%s,%s=%s", result, key, val)
+		}
+	}
+
+	return result
 }
