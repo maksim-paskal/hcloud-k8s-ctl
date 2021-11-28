@@ -23,6 +23,9 @@ export HOME=/root/
 apt update
 apt install -y apt-transport-https ca-certificates curl software-properties-common nfs-common
 
+# disable swap
+swapoff -a
+
 # disable 111/udp 111/tcp port
 systemctl stop rpcbind.socket
 systemctl disable rpcbind.socket
