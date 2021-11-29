@@ -27,8 +27,12 @@ apt install -y apt-transport-https ca-certificates curl software-properties-comm
 swapoff -a
 
 # disable 111/udp 111/tcp port
+systemctl stop rpcbind.service
 systemctl stop rpcbind.socket
+systemctl stop rpcbind.target
+systemctl disable rpcbind.service
 systemctl disable rpcbind.socket
+systemctl disable rpcbind.target
 
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
