@@ -33,6 +33,19 @@ mv linux-amd64/helm /usr/local/bin/helm
 rm helm.tar.gz
 rm -rf linux-amd64
 
+# delete all tokens
+kubeadm token list -o jsonpath='{.token}{"\n"}' | xargs kubeadm token delete
+
+# create token for nodes
+cp /root/scripts/common-install.sh /root/scripts/cloud-init.sh
+kubeadm token create --ttl=0 --print-join-command >> /root/scripts/cloud-init.sh
+
+# create autoscaler configuration
+HCLOUD_CLOUD_INIT=$(base64 -w 0 < /root/scripts/cloud-init.sh)
+kubectl -n kube-system delete configmap hcloud-init || true
+kubectl -n kube-system create configmap hcloud-init --from-literal=bootstrap="$HCLOUD_CLOUD_INIT"
+kubectl -n kube-system rollout restart deploy cluster-autoscaler || true
+
 # install helm chart
 helm upgrade --install hcloud-k8s-ctl --namespace kube-system $SCRIPT_PATH/scripts/chart --values=$SCRIPT_PATH/values.yaml
 
