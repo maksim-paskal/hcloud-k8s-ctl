@@ -439,12 +439,16 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 		return err
 	}
 
-	placementGroupResults, _, err := api.hcloudClient.PlacementGroup.Create(api.ctx, hcloud.PlacementGroupCreateOpts{
-		Name: config.Get().MasterServers.PlacementGroupName,
-		Type: hcloud.PlacementGroupTypeSpread,
-	})
-	if err != nil {
-		return err
+	var placementGroupResults hcloud.PlacementGroupCreateResult
+
+	if config.Get().MasterCount > 1 {
+		placementGroupResults, _, err = api.hcloudClient.PlacementGroup.Create(api.ctx, hcloud.PlacementGroupCreateOpts{
+			Name: config.Get().MasterServers.PlacementGroupName,
+			Type: hcloud.PlacementGroupTypeSpread,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	for i := 1; i <= config.Get().MasterCount; i++ {
@@ -461,7 +465,10 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 			Labels:           config.Get().MasterServers.Labels,
 			Datacenter:       k8sDatacenter,
 			StartAfterCreate: &startAfterCreate,
-			PlacementGroup:   placementGroupResults.PlacementGroup,
+		}
+
+		if config.Get().MasterCount > 1 {
+			prop.PlacementGroup = placementGroupResults.PlacementGroup
 		}
 
 		// install kubelet kubeadm on server start

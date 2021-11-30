@@ -5,7 +5,7 @@ test:
 	./scripts/validate-license.sh
 	go fmt ./cmd/... ./pkg/...
 	go mod tidy
-	golangci-lint run -v
+	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run -v
 	CONFIG=config_test.yaml go test -race -coverprofile coverage.out ./cmd/... ./pkg/...
 coverage:
 	go tool cover -html=coverage.out
@@ -22,7 +22,7 @@ list-configurations:
 run:
 	go run -race ./cmd -action=$(action) -log.level=DEBUG
 build:
-	goreleaser build --rm-dist --skip-validate
+	go run github.com/goreleaser/goreleaser@latest build --rm-dist --skip-validate
 apply-yaml:
 	kubectl apply -f ./scripts
 apply-test:
