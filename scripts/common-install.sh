@@ -71,8 +71,6 @@ cat > /etc/docker/daemon.json <<EOF
 }
 EOF
 mkdir -p /etc/systemd/system/docker.service.d
-systemctl daemon-reload
-systemctl restart docker
 
 cat <<EOF | tee /etc/sysctl.conf
 fs.inotify.max_user_watches=524288
@@ -86,6 +84,10 @@ apt-mark hold kubelet kubeadm kubectl
 
 INTERNAL_IP=$(hostname -I | awk '{print $2}')
 cat <<EOF | tee /etc/default/kubelet
-KUBELET_EXTRA_ARGS=--cloud-provider=external --node-ip=$INTERNAL_IP --v=2
+KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --cloud-provider=external --node-ip=$INTERNAL_IP --v=2
 EOF
+
+systemctl daemon-reload
+systemctl restart docker
+systemctl restart kubelet
 
