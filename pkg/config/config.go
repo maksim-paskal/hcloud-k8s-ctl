@@ -198,8 +198,7 @@ func expand(path string) (string, error) {
 }
 
 func envDefault(name string, defaultValue string) string {
-	e := os.Getenv(name)
-	if len(e) > 0 {
+	if e := os.Getenv(name); len(e) > 0 {
 		return e
 	}
 
