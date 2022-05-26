@@ -29,16 +29,16 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var ctx = context.Background() //nolint:gochecknoglobals
+
 type ApplicationAPI struct {
 	hcloudClient      *hcloud.Client
-	ctx               context.Context
 	masterClusterJoin string
 	clusterKubeConfig string
 }
 
 func NewApplicationAPI() (*ApplicationAPI, error) {
 	api := ApplicationAPI{
-		ctx:          context.Background(),
 		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken)),
 	}
 
@@ -50,7 +50,7 @@ func NewApplicationAPI() (*ApplicationAPI, error) {
 }
 
 func (api *ApplicationAPI) validateConfig() error {
-	location, _, err := api.hcloudClient.Location.Get(api.ctx, config.Get().Location)
+	location, _, err := api.hcloudClient.Location.Get(ctx, config.Get().Location)
 	if err != nil {
 		return errors.Wrap(err, "hcloudClient.Location.Get")
 	}
@@ -59,7 +59,7 @@ func (api *ApplicationAPI) validateConfig() error {
 		return errors.Wrap(errLocationNotFound, config.Get().Location)
 	}
 
-	datacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, config.Get().Datacenter)
+	datacenter, _, err := api.hcloudClient.Datacenter.Get(ctx, config.Get().Datacenter)
 	if err != nil {
 		return errors.Wrap(err, "hcloudClient.Datacenter.Get")
 	}
@@ -113,7 +113,7 @@ export MASTER_LB=` + loadBalancerIP + `
 }
 
 func (api *ApplicationAPI) waitForLoadBalancer(loadBalancerName string) (string, error) {
-	loadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(api.ctx, loadBalancerName)
+	loadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(ctx, loadBalancerName)
 	if err != nil {
 		return "", errors.Wrap(err, "error in loadBalancer get")
 	}
@@ -135,7 +135,7 @@ func (api *ApplicationAPI) waitForLoadBalancer(loadBalancerName string) (string,
 }
 
 func (api *ApplicationAPI) waitForServer(server string) (string, error) {
-	masterServer, _, err := api.hcloudClient.Server.Get(api.ctx, server)
+	masterServer, _, err := api.hcloudClient.Server.Get(ctx, server)
 	if err != nil {
 		return "", errors.Wrap(err, "error in server get")
 	}
@@ -348,19 +348,19 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 	log.Info("Creating loadbalancer...")
 
 	k8sLoadBalancerType, _, err := api.hcloudClient.LoadBalancerType.Get(
-		api.ctx,
+		ctx,
 		config.Get().MasterLoadBalancer.LoadBalancerType,
 	)
 	if err != nil {
 		return err
 	}
 
-	k8sLocation, _, err := api.hcloudClient.Location.Get(api.ctx, config.Get().Location)
+	k8sLocation, _, err := api.hcloudClient.Location.Get(ctx, config.Get().Location)
 	if err != nil {
 		return err
 	}
 
-	k8sNetwork, _, err := api.hcloudClient.Network.Get(api.ctx, config.Get().ClusterName)
+	k8sNetwork, _, err := api.hcloudClient.Network.Get(ctx, config.Get().ClusterName)
 	if err != nil {
 		return err
 	}
@@ -374,7 +374,7 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 		DestinationPort: &DestinationPort,
 	}
 
-	_, _, err = api.hcloudClient.LoadBalancer.Create(api.ctx, hcloud.LoadBalancerCreateOpts{
+	_, _, err = api.hcloudClient.LoadBalancer.Create(ctx, hcloud.LoadBalancerCreateOpts{
 		Name:             config.Get().ClusterName,
 		LoadBalancerType: k8sLoadBalancerType,
 		Location:         k8sLocation,
@@ -396,7 +396,7 @@ func (api *ApplicationAPI) attachToBalancer(server hcloud.ServerCreateResult, ba
 		UsePrivateIP: &usePrivateIP,
 	}
 
-	_, _, err := api.hcloudClient.LoadBalancer.AddServerTarget(api.ctx, balancer, k8sTargetServer)
+	_, _, err := api.hcloudClient.LoadBalancer.AddServerTarget(ctx, balancer, k8sTargetServer)
 	if err != nil {
 		return err
 	}
@@ -407,34 +407,34 @@ func (api *ApplicationAPI) attachToBalancer(server hcloud.ServerCreateResult, ba
 func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 	log.Info("Creating servers...")
 
-	serverType, _, err := api.hcloudClient.ServerType.Get(api.ctx, config.Get().MasterServers.ServerType)
+	serverType, _, err := api.hcloudClient.ServerType.Get(ctx, config.Get().MasterServers.ServerType)
 	if err != nil {
 		return err
 	}
 
-	serverImage, _, err := api.hcloudClient.Image.Get(api.ctx, config.Get().MasterServers.Image)
+	serverImage, _, err := api.hcloudClient.Image.Get(ctx, config.Get().MasterServers.Image)
 	if err != nil {
 		return err
 	}
 
-	k8sNetwork, _, err := api.hcloudClient.Network.Get(api.ctx, config.Get().ClusterName)
+	k8sNetwork, _, err := api.hcloudClient.Network.Get(ctx, config.Get().ClusterName)
 	if err != nil {
 		return err
 	}
 
-	k8sSSHKey, _, err := api.hcloudClient.SSHKey.Get(api.ctx, config.Get().ClusterName)
+	k8sSSHKey, _, err := api.hcloudClient.SSHKey.Get(ctx, config.Get().ClusterName)
 	if err != nil {
 		return err
 	}
 
-	k8sDatacenter, _, err := api.hcloudClient.Datacenter.Get(api.ctx, config.Get().Datacenter)
+	k8sDatacenter, _, err := api.hcloudClient.Datacenter.Get(ctx, config.Get().Datacenter)
 	if err != nil {
 		return err
 	}
 
 	startAfterCreate := true
 
-	k8sLoadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(api.ctx, config.Get().ClusterName)
+	k8sLoadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(ctx, config.Get().ClusterName)
 	if err != nil {
 		return err
 	}
@@ -442,7 +442,7 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 	var placementGroupResults hcloud.PlacementGroupCreateResult
 
 	if config.Get().MasterCount > 1 {
-		placementGroupResults, _, err = api.hcloudClient.PlacementGroup.Create(api.ctx, hcloud.PlacementGroupCreateOpts{
+		placementGroupResults, _, err = api.hcloudClient.PlacementGroup.Create(ctx, hcloud.PlacementGroupCreateOpts{
 			Name: config.Get().MasterServers.PlacementGroupName,
 			Type: hcloud.PlacementGroupTypeSpread,
 		})
@@ -476,7 +476,7 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 			prop.UserData = api.getCommonInstallCommand()
 		}
 
-		serverResults, _, err := api.hcloudClient.Server.Create(api.ctx, prop)
+		serverResults, _, err := api.hcloudClient.Server.Create(ctx, prop)
 		if err != nil {
 			return err
 		}
@@ -513,7 +513,7 @@ func (api *ApplicationAPI) createSSHKey() error {
 		return err
 	}
 
-	_, _, err = api.hcloudClient.SSHKey.Create(api.ctx, hcloud.SSHKeyCreateOpts{
+	_, _, err = api.hcloudClient.SSHKey.Create(ctx, hcloud.SSHKeyCreateOpts{
 		Name:      config.Get().ClusterName,
 		PublicKey: string(publicKey),
 	})
@@ -532,7 +532,7 @@ func (api *ApplicationAPI) createNetwork() error {
 		return err
 	}
 
-	k8sNetwork, _, err := api.hcloudClient.Network.Create(api.ctx, hcloud.NetworkCreateOpts{
+	k8sNetwork, _, err := api.hcloudClient.Network.Create(ctx, hcloud.NetworkCreateOpts{
 		Name:    config.Get().ClusterName,
 		IPRange: IPRangeNet,
 	})
@@ -546,7 +546,7 @@ func (api *ApplicationAPI) createNetwork() error {
 		NetworkZone: config.Get().NetworkZone,
 	}
 
-	_, _, err = api.hcloudClient.Network.AddSubnet(api.ctx, k8sNetwork, hcloud.NetworkAddSubnetOpts{
+	_, _, err = api.hcloudClient.Network.AddSubnet(ctx, k8sNetwork, hcloud.NetworkAddSubnetOpts{
 		Subnet: k8sNetworkSubnet,
 	})
 	if err != nil {
@@ -615,39 +615,39 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop
 	log.Info("Deleting cluster...")
 
-	k8sNetwork, _, _ := api.hcloudClient.Network.Get(api.ctx, config.Get().ClusterName)
+	k8sNetwork, _, _ := api.hcloudClient.Network.Get(ctx, config.Get().ClusterName)
 	if k8sNetwork != nil {
-		_, err := api.hcloudClient.Network.Delete(api.ctx, k8sNetwork)
+		_, err := api.hcloudClient.Network.Delete(ctx, k8sNetwork)
 		if err != nil {
 			log.WithError(err).Warn("error deleting Network")
 		}
 	}
 
-	k8sSSHKey, _, _ := api.hcloudClient.SSHKey.Get(api.ctx, config.Get().ClusterName)
+	k8sSSHKey, _, _ := api.hcloudClient.SSHKey.Get(ctx, config.Get().ClusterName)
 	if k8sSSHKey != nil {
-		_, err := api.hcloudClient.SSHKey.Delete(api.ctx, k8sSSHKey)
+		_, err := api.hcloudClient.SSHKey.Delete(ctx, k8sSSHKey)
 		if err != nil {
 			log.WithError(err).Warn("error deleting SSHKey")
 		}
 	}
 
-	k8sLoadBalancer, _, _ := api.hcloudClient.LoadBalancer.Get(api.ctx, config.Get().ClusterName)
+	k8sLoadBalancer, _, _ := api.hcloudClient.LoadBalancer.Get(ctx, config.Get().ClusterName)
 	if k8sLoadBalancer != nil {
-		_, err := api.hcloudClient.LoadBalancer.Delete(api.ctx, k8sLoadBalancer)
+		_, err := api.hcloudClient.LoadBalancer.Delete(ctx, k8sLoadBalancer)
 		if err != nil {
 			log.WithError(err).Warn("error deleting LoadBalancer")
 		}
 	}
 
 	// get master nodes
-	allServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+	allServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: api.getMasterLabels(),
 		},
 	})
 
 	// get worker nodes
-	nodeServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+	nodeServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: "hcloud/node-group",
 		},
@@ -656,15 +656,15 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop
 	allServers = append(allServers, nodeServers...)
 
 	for _, nodeServer := range allServers {
-		_, err := api.hcloudClient.Server.Delete(api.ctx, nodeServer)
+		_, err := api.hcloudClient.Server.Delete(ctx, nodeServer)
 		if err != nil {
 			log.WithError(err).Warnf("error deleting Server=%s", nodeServer.Name)
 		}
 	}
 
-	placementGroup, _, _ := api.hcloudClient.PlacementGroup.Get(api.ctx, config.Get().MasterServers.PlacementGroupName)
+	placementGroup, _, _ := api.hcloudClient.PlacementGroup.Get(ctx, config.Get().MasterServers.PlacementGroupName)
 	if placementGroup != nil {
-		_, err := api.hcloudClient.PlacementGroup.Delete(api.ctx, placementGroup)
+		_, err := api.hcloudClient.PlacementGroup.Delete(ctx, placementGroup)
 		if err != nil {
 			log.WithError(err).Warnf("error deleting PlacementGroup=%s", placementGroup.Name)
 		}
@@ -732,7 +732,7 @@ func (api *ApplicationAPI) ListConfigurations() {
 
 	var err error
 
-	locations, err := api.hcloudClient.Location.All(api.ctx)
+	locations, err := api.hcloudClient.Location.All(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -741,7 +741,7 @@ func (api *ApplicationAPI) ListConfigurations() {
 		result.Locations = append(result.Locations, location.Name)
 	}
 
-	datacenters, err := api.hcloudClient.Datacenter.All(api.ctx)
+	datacenters, err := api.hcloudClient.Datacenter.All(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -753,7 +753,7 @@ func (api *ApplicationAPI) ListConfigurations() {
 		})
 	}
 
-	servertypes, err := api.hcloudClient.ServerType.All(api.ctx)
+	servertypes, err := api.hcloudClient.ServerType.All(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -790,13 +790,13 @@ func (api *ApplicationAPI) PatchClusterDeployment() {
 }
 
 func (api *ApplicationAPI) ExecuteAdHoc(command string) {
-	allServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+	allServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: api.getMasterLabels(),
 		},
 	})
 
-	nodeServers, _, _ := api.hcloudClient.Server.List(api.ctx, hcloud.ServerListOpts{
+	nodeServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: "hcloud/node-group",
 		},
