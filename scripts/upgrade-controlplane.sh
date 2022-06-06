@@ -13,22 +13,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+set -ex
 
-set -euo pipefail
+export INDEX=${HOSTNAME##*-}
 
-export CGO_ENABLED=0
-export GO111MODULE=on
-export TAGS=""
-export GOFLAGS="-trimpath"
-export LDFLAGS="-X main.gitVersion=$(git describe --tags $(git rev-list --tags --max-count=1))-$(date +%Y%m%d%H%M%S)-$(git log -n1 --pretty='%h')"
-export TARGETS="darwin/amd64 linux/amd64"
-export BINNAME="hcloud-k8s-ctl"
-export GOX="go run github.com/mitchellh/gox"
+# update kubernetes binaries
+/root/scripts/common-install.sh
 
-rm -rf _dist
+if [[ $INDEX -eq 1 ]]; then
+  # update controlplane on first node
+  kubeadm upgrade apply "$(kubeadm version -o short)" -f
+else
+  # update controlplane on other node
+  kubeadm upgrade node
+fi
 
-go get github.com/mitchellh/gox
-
-$GOX -parallel=3 -output="_dist/$BINNAME-{{.OS}}-{{.Arch}}" -osarch="$TARGETS" -tags "$TAGS" -ldflags "$LDFLAGS" ./cmd
-
-shasum -a 256 ./_dist/$BINNAME* > ./_dist/sha256.txt
+systemctl restart kubelet

@@ -19,6 +19,8 @@ patch-cluster:
 	make run action=patch-cluster
 list-configurations:
 	make run action=list-configurations
+upgrade-controlplane:
+	make run action=upgrade-controlplane
 run:
 	go run -race ./cmd -action=$(action) -log.level=DEBUG
 build:
@@ -35,5 +37,12 @@ test-kubernetes-yaml:
 download-yamls:
 	curl -sSL -o ./scripts/chart/templates/kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 	curl -sSL -o ./scripts/chart/templates/ccm.yaml https://github.com/hetznercloud/hcloud-cloud-controller-manager/releases/latest/download/ccm.yaml
-	curl -sSL -o ./scripts/chart/templates/hcloud-csi.yml https://raw.githubusercontent.com/hetznercloud/csi-driver/master/deploy/kubernetes/hcloud-csi.yml
+	curl -sSL -o ./scripts/chart/templates/hcloud-csi.yml https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.6.0/deploy/kubernetes/hcloud-csi.yml
 	curl -sSL -o ./scripts/chart/templates/metrics-server.yml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+install:
+	go run github.com/goreleaser/goreleaser@latest build \
+	--single-target \
+	--rm-dist \
+	--skip-validate \
+	--output /tmp/hcloud-k8s-ctl
+	sudo mv /tmp/hcloud-k8s-ctl /usr/local/bin/hcloud-k8s-ctl

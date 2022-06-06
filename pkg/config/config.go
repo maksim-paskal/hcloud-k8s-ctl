@@ -33,10 +33,12 @@ type masterServersInitParams struct {
 }
 
 type cliArgs struct {
-	LogLevel   *string
-	ConfigPath *string
-	Action     *string
-	Command    *string
+	LogLevel         *string
+	ConfigPath       *string
+	Action           *string
+	AdhocCommand     *string
+	AdhocCopyNewFile *bool
+	AdhocMasters     *bool
 }
 
 type masterServers struct {
@@ -80,10 +82,12 @@ type Type struct {
 
 //nolint:gochecknoglobals
 var cliArguments = cliArgs{
-	LogLevel:   flag.String("log.level", "INFO", "logging level"),
-	ConfigPath: flag.String("config", envDefault("CONFIG", "config.yaml"), "config path"),
-	Action:     flag.String("action", "", "create|delete|list-configurations|patch-cluster|adhoc"),
-	Command:    flag.String("command", "", "command to adhoc action"),
+	LogLevel:         flag.String("log.level", "INFO", "logging level"),
+	ConfigPath:       flag.String("config", envDefault("CONFIG", "config.yaml"), "config path"),
+	Action:           flag.String("action", "", "create|delete|list-configurations|patch-cluster|adhoc|upgrade-controlplane"), //nolint:lll
+	AdhocCommand:     flag.String("adhoc.command", "", "command to adhoc action"),
+	AdhocCopyNewFile: flag.Bool("adhoc.copynewfile", false, "copy new files to adhoc action"),
+	AdhocMasters:     flag.Bool("adhoc.master", false, "run adhoc also on master servers"),
 }
 
 func defaultConfig() Type {

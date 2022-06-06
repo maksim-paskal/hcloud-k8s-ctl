@@ -15,13 +15,27 @@
 # limitations under the License.
 set -ex
 
-export KUBERNETES_VERSION=1.21.1
-export DOCKER_VERSION=5:20.10.10~3-0~ubuntu-focal
+export KUBERNETES_VERSION=1.21.13
+export DOCKER_VERSION=5:20.10.13~3-0~ubuntu-focal
+export CONTAINERD_VERSION=1.4.13-1
+
+# to select all available versions, run
+# apt-cache madison docker-ce containerd.io kubelet
+
 export DEBIAN_FRONTEND=noninteractive
 export HOME=/root/
 
+# uninstall old versions if exists
+dpkg --purge docker docker-engine docker.io containerd runc
+
 apt update
-apt install -y apt-transport-https ca-certificates curl software-properties-common nfs-common
+apt install -y \
+apt-transport-https \
+ca-certificates \
+curl \
+software-properties-common \
+nfs-common \
+"linux-headers-$(uname -r)"
 
 # disable swap
 swapoff -a
@@ -34,8 +48,12 @@ systemctl disable rpcbind.service
 systemctl disable rpcbind.socket
 systemctl disable rpcbind.target
 
+mkdir -p /etc/apt/keyrings
+
+rm -rf /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
 
 cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
@@ -45,7 +63,8 @@ deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-arch
 EOF
 
 apt update
-apt install -y docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io
+apt-mark unhold docker-ce docker-ce-cli containerd.io
+apt install -y docker-ce=$DOCKER_VERSION docker-ce-cli=$DOCKER_VERSION containerd.io=$CONTAINERD_VERSION
 apt-mark hold docker-ce docker-ce-cli containerd.io
 
 mkdir -p /etc/docker/
@@ -67,7 +86,7 @@ cat > /etc/docker/daemon.json <<EOF
     }
   },
   "storage-driver": "overlay2",
-  "insecure-registries": ["10.100.0.11:5000"]
+  "insecure-registries": ["10.100.0.0/16"]
 }
 EOF
 mkdir -p /etc/systemd/system/docker.service.d
@@ -79,6 +98,7 @@ vm.max_map_count=524288
 EOF
 sysctl -p
 
+apt-mark unhold kubelet kubeadm kubectl
 apt-get install -y kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBERNETES_VERSION}-00 kubectl=${KUBERNETES_VERSION}-00
 apt-mark hold kubelet kubeadm kubectl
 
@@ -87,7 +107,10 @@ cat <<EOF | tee /etc/default/kubelet
 KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --cloud-provider=external --node-ip=$INTERNAL_IP --v=2
 EOF
 
+apt -y autoremove
+apt -y autoclean
+
 systemctl daemon-reload
 systemctl restart docker
+systemctl restart containerd
 systemctl restart kubelet
-
