@@ -150,7 +150,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cluster-autoscaler
-        image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.0
+        image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.2
         imagePullPolicy: IfNotPresent
         resources:
           requests:

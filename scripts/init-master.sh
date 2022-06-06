@@ -45,4 +45,3 @@ kubectl -n kube-system create secret generic hcloud-csi --from-literal=token="$H
 
 # create token for master
 kubeadm token create --print-join-command --certificate-key "$(kubeadm init phase upload-certs --upload-certs | tail -1)" > /root/scripts/join-master.sh
-

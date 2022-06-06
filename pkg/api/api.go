@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net"
+	"sync"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -38,6 +39,8 @@ type ApplicationAPI struct {
 }
 
 func NewApplicationAPI() (*ApplicationAPI, error) {
+	log.Info("Connecting to Hetzner Cloud API...")
+
 	api := ApplicationAPI{
 		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken)),
 	}
@@ -50,6 +53,8 @@ func NewApplicationAPI() (*ApplicationAPI, error) {
 }
 
 func (api *ApplicationAPI) validateConfig() error {
+	log.Info("Validating config...")
+
 	location, _, err := api.hcloudClient.Location.Get(ctx, config.Get().Location)
 	if err != nil {
 		return errors.Wrap(err, "hcloudClient.Location.Get")
@@ -233,11 +238,8 @@ func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 		}
 
 		if copyNewScripts {
-			log.Info("Clear current root directory - and loading new scripts")
-
-			_, stderr, err := api.execCommand(serverIP, api.getCommonExecCommand())
-			if err != nil {
-				log.WithError(err).Fatal(stderr)
+			if err = api.downloadNewScripts(serverName, serverIP); err != nil {
+				log.WithError(err).Fatal()
 			}
 		}
 
@@ -789,39 +791,77 @@ func (api *ApplicationAPI) PatchClusterDeployment() {
 	log.Info("Cluster pached!")
 }
 
-func (api *ApplicationAPI) ExecuteAdHoc(command string) {
-	allServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
-		ListOpts: hcloud.ListOpts{
-			LabelSelector: api.getMasterLabels(),
-		},
-	})
+func (api *ApplicationAPI) ExecuteAdHoc(command string, runOnMaster bool, copyNewScripts bool) { //nolint:funlen
+	log.Info("Get worker nodes...")
 
-	nodeServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
+	allServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: "hcloud/node-group",
 		},
 	})
 
-	allServers = append(allServers, nodeServers...)
+	if runOnMaster {
+		log.Info("Get master nodes...")
+
+		masterServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
+			ListOpts: hcloud.ListOpts{
+				LabelSelector: api.getMasterLabels(),
+			},
+		})
+
+		allServers = append(allServers, masterServers...)
+	}
+
+	adhocStatus := make(map[string]string)
+
+	var wg sync.WaitGroup
+
+	wg.Add(len(allServers))
+
+	log.Info("Start executing command on selected nodes")
 
 	for _, server := range allServers {
-		serverIP, err := server.PublicNet.IPv4.IP.MarshalText()
-		if err != nil {
-			log.WithError(err).Error("can not get server IP")
+		go func(server *hcloud.Server) {
+			defer wg.Done()
 
-			continue
+			log := log.WithField("server", server.Name)
+
+			serverIP, err := server.PublicNet.IPv4.IP.MarshalText()
+			if err != nil {
+				log.WithError(err).Error("can not get server IP")
+				adhocStatus[server.Name] = err.Error()
+
+				return
+			}
+
+			if copyNewScripts {
+				if err = api.downloadNewScripts(server.Name, string(serverIP)); err != nil {
+					log.WithError(err).Fatal()
+				}
+			}
+
+			stdout, stderr, err := api.execCommand(string(serverIP), command)
+			if err != nil {
+				log.WithError(err).Error(stderr)
+				adhocStatus[server.Name] = stderr
+
+				return
+			}
+
+			log.Infof("stdout=%s,stderr=%s", stdout, stderr)
+
+			adhocStatus[server.Name] = "ok"
+		}(server)
+	}
+
+	wg.Wait()
+
+	for name, status := range adhocStatus {
+		if status == "ok" {
+			log.Infof("%s -> %s", name, status)
+		} else {
+			log.Errorf("%s -> %s", name, status)
 		}
-
-		stdout, stderr, err := api.execCommand(string(serverIP), command)
-		if err != nil {
-			log.WithError(err).Error(stderr)
-
-			continue
-		}
-
-		log := log.WithField("serverIP", string(serverIP))
-
-		log.Infof("stdout=%s,stderr=%s", stdout, stderr)
 	}
 }
 
@@ -837,4 +877,48 @@ func (api *ApplicationAPI) getMasterLabels() string {
 	}
 
 	return result
+}
+
+func (api *ApplicationAPI) downloadNewScripts(serverName string, serverIP string) error {
+	log := log.WithField("server", serverName)
+
+	log.Info("Clear current root directory, loading new scripts...")
+
+	_, stderr, err := api.execCommand(serverIP, api.getCommonExecCommand())
+	if err != nil {
+		return errors.Wrap(err, stderr)
+	}
+
+	return nil
+}
+
+func (api *ApplicationAPI) UpgradeControlPlane() {
+	log.Info("Executing controlplane upgrade...")
+
+	for i := 1; i <= config.Get().MasterCount; i++ {
+		serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, i)
+
+		log := log.WithField("master", serverName)
+
+		serverIP, err := api.waitForServer(serverName)
+		if err != nil {
+			log.WithError(err).Fatal()
+		}
+
+		if err = api.downloadNewScripts(serverName, serverIP); err != nil {
+			log.WithError(err).Fatal()
+		}
+
+		log.Info("Upgrade controlplane...")
+
+		stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/upgrade-controlplane.sh")
+		if err != nil {
+			log.WithError(err).Fatal(stderr)
+		}
+
+		log.Debugf("stdout=%s", stdout)
+		log.Debugf("stderr=%s", stderr)
+	}
+
+	log.Info("Cluster upgraded!")
 }

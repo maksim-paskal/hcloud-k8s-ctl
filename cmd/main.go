@@ -72,11 +72,17 @@ func main() { //nolint:cyclop
 	case "patch-cluster":
 		applicationAPI.PatchClusterDeployment()
 	case "adhoc":
-		if len(*config.Get().CliArgs.Command) == 0 {
-			log.Fatal("add -command argument")
+		if len(*config.Get().CliArgs.AdhocCommand) == 0 {
+			log.Fatal("add -adhoc.command argument")
 		}
 
-		applicationAPI.ExecuteAdHoc(*config.Get().CliArgs.Command)
+		applicationAPI.ExecuteAdHoc(
+			*config.Get().CliArgs.AdhocCommand,
+			*config.Get().CliArgs.AdhocMasters,
+			*config.Get().CliArgs.AdhocCopyNewFile,
+		)
+	case "upgrade-controlplane":
+		applicationAPI.UpgradeControlPlane()
 	default:
 		log.Fatal("unknown action")
 	}
