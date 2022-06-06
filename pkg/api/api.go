@@ -843,7 +843,7 @@ func (api *ApplicationAPI) ExecuteAdHoc(command string, runOnMaster bool, copyNe
 			stdout, stderr, err := api.execCommand(string(serverIP), command)
 			if err != nil {
 				log.WithError(err).Error(stderr)
-				adhocStatus[server.Name] = stderr
+				adhocStatus[server.Name] = err.Error()
 
 				return
 			}
