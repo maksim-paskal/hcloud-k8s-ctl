@@ -35,7 +35,7 @@ evictionHard:
   nodefs.inodesFree: "5%"
 EOF
 
-kubeadm init --upload-certs --config=/root/scripts/kubeadm-config.yaml
+kubeadm init --upload-certs --config=/root/scripts/kubeadm-config.yaml --v=5
 
 export KUBECONFIG=/etc/kubernetes/admin.conf
 

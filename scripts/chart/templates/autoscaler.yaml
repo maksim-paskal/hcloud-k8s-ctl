@@ -1,3 +1,4 @@
+{{ if .Values.autoscaler.enabled }}
 ---
 apiVersion: v1
 kind: ServiceAccount
@@ -158,7 +159,12 @@ spec:
             memory: 300Mi
         command:
         - ./cluster-autoscaler
-{{ tpl (toYaml .Values.deploymentsConfig.autoscalerconfig.args) . | indent 8 }}
+{{ tpl (toYaml .Values.autoscaler.args) . | indent 8 }}
+        {{- range $i, $worker := .Values.autoscaler.workers }}
+        {{- range $y, $type := $worker.type }}
+        - --nodes={{ $worker.min }}:{{ $worker.max }}:{{ upper $type }}:{{ upper (tpl (default $.Values.location $worker.datacenter) $) }}:{{ $type }}
+        {{- end }}
+        {{- end }}
         env:
         - name: HCLOUD_IMAGE
           value: "ubuntu-20.04"
@@ -195,3 +201,4 @@ spec:
   selector:
     matchLabels:
       app: cluster-autoscaler
+{{ end }}

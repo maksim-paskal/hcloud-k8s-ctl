@@ -1,3 +1,4 @@
 .hcloudauth
 dist
 coverage.out
+config-*.yaml

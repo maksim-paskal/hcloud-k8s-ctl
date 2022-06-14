@@ -52,6 +52,19 @@ type masterServers struct {
 	ServersInitParams  masterServersInitParams
 }
 
+type autoscalerWorker struct {
+	Datacenter string
+	Min        int
+	Max        int
+	Type       []string
+}
+
+type autoscaler = struct {
+	Enabled bool
+	Args    []string
+	Workers []autoscalerWorker
+}
+
 type emptyStruct struct{}
 
 type masterLoadBalancer struct {
@@ -78,6 +91,7 @@ type Type struct {
 	MasterLoadBalancer masterLoadBalancer `yaml:"masterLoadBalancer"`
 	CliArgs            cliArgs            `yaml:"cliArgs"`
 	DeploymentsConfig  interface{}        `yaml:"deploymentsConfig"` // values.yaml in chart
+	Autoscaler         autoscaler         `yaml:"autoscaler"`
 }
 
 //nolint:gochecknoglobals
@@ -90,7 +104,7 @@ var cliArguments = cliArgs{
 	AdhocMasters:     flag.Bool("adhoc.master", false, "run adhoc also on master servers"),
 }
 
-func defaultConfig() Type {
+func defaultConfig() Type { //nolint:funlen
 	privateKey := "~/.ssh/id_rsa"
 	kubeConfigPath := "~/.kube/hcloud"
 
@@ -127,6 +141,33 @@ func defaultConfig() Type {
 			DestinationPort:  loadBalancerDefaultPort,
 		},
 		DeploymentsConfig: emptyStruct{},
+		Autoscaler: autoscaler{
+			Enabled: true,
+			Args: []string{
+				"--v=4",
+				"--cloud-provider=hetzner",
+				"--stderrthreshold=info",
+				"--expander=least-waste",
+				"--scale-down-enabled=true",
+				"--skip-nodes-with-local-storage=false",
+				"--skip-nodes-with-system-pods=false",
+				"--scale-down-utilization-threshold=0.8",
+			},
+			Workers: []autoscalerWorker{
+				{
+					Min: 0,
+					Max: workersCount,
+					Type: []string{
+						"cx11",
+						"cx21",
+						"cpx31",
+						"cpx41",
+						"cx51",
+						"cpx51",
+					},
+				},
+			},
+		},
 	}
 }
 
