@@ -37,6 +37,9 @@ software-properties-common \
 nfs-common \
 "linux-headers-$(uname -r)"
 
+# hold linux kernel update on server restart
+apt-mark hold "linux-image-$(uname -r)" "linux-headers-$(uname -r)"
+
 # disable swap
 swapoff -a
 
@@ -78,6 +81,7 @@ cat > /etc/docker/daemon.json <<EOF
   },
   "live-restore": true,
   "max-concurrent-downloads": 10,
+  "max-concurrent-uploads": 10,
   "default-ulimits": {
     "memlock": {
       "Hard": -1,
@@ -95,6 +99,9 @@ cat <<EOF | tee /etc/sysctl.conf
 fs.inotify.max_user_watches=524288
 fs.inotify.max_user_instances=8192
 vm.max_map_count=524288
+vm.overcommit_memory=1
+kernel.panic=10
+kernel.panic_on_oops=1
 EOF
 sysctl -p
 
@@ -103,8 +110,69 @@ apt-get install -y kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBERNETES_VERSION
 apt-mark hold kubelet kubeadm kubectl
 
 INTERNAL_IP=$(hostname -I | awk '{print $2}')
+
+mkdir -p /etc/kubernetes/kubelet/
+
+# https://docs.hetzner.com/dns-console/dns/general/recursive-name-servers
+cat > /etc/kubernetes/kubelet/resolv.conf <<EOF
+nameserver 185.12.64.1
+nameserver 185.12.64.2
+EOF
+
+# kubeadm config print init-defaults --component-configs KubeletConfiguration
+cat > /etc/kubernetes/kubelet/config.yaml <<EOF
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    cacheTTL: 0s
+    enabled: true
+  x509:
+    clientCAFile: /etc/kubernetes/pki/ca.crt
+authorization:
+  mode: Webhook
+  webhook:
+    cacheAuthorizedTTL: 0s
+    cacheUnauthorizedTTL: 0s
+cgroupDriver: systemd
+clusterDNS:
+- 10.96.0.10
+clusterDomain: cluster.local
+cpuManagerReconcilePeriod: 0s
+evictionPressureTransitionPeriod: 0s
+fileCheckFrequency: 0s
+healthzBindAddress: 127.0.0.1
+healthzPort: 10248
+httpCheckFrequency: 0s
+imageMinimumGCAge: 0s
+logging: {}
+nodeStatusReportFrequency: 0s
+nodeStatusUpdateFrequency: 0s
+resolvConf: /etc/kubernetes/kubelet/resolv.conf
+rotateCertificates: true
+runtimeRequestTimeout: 0s
+shutdownGracePeriod: 0s
+shutdownGracePeriodCriticalPods: 0s
+staticPodPath: /etc/kubernetes/manifests
+streamingConnectionIdleTimeout: 0s
+syncFrequency: 0s
+volumeStatsAggPeriod: 0s
+featureGates:
+  RotateKubeletServerCertificate: true
+serverTLSBootstrap: true
+evictionHard:
+  memory.available: "100Mi"
+  nodefs.available: "10%"
+  nodefs.inodesFree: "5%"
+protectKernelDefaults: true
+serializeImagePulls: true
+EOF
+
 cat <<EOF | tee /etc/default/kubelet
-KUBELET_EXTRA_ARGS=--cgroup-driver=systemd --cloud-provider=external --node-ip=$INTERNAL_IP --v=2
+KUBELET_CONFIG_ARGS=--config=/etc/kubernetes/kubelet/config.yaml
+KUBELET_EXTRA_ARGS=--container-runtime=docker --cloud-provider=external --node-ip=$INTERNAL_IP --v=2
 EOF
 
 apt -y autoremove

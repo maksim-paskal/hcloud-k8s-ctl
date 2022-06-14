@@ -1,5 +1,28 @@
 clusterName: k8s
 location: nbg1
+workersCount: 20
+autoscaler:
+  enabled: true
+  args:
+  - --v=4
+  - --cloud-provider=hetzner
+  - --stderrthreshold=info
+  - --expander=least-waste
+  - --scale-down-enabled=true
+  - --skip-nodes-with-local-storage=false
+  - --skip-nodes-with-system-pods=false
+  - --scale-down-utilization-threshold=0.8
+  workers:
+  - datacenter: ""
+    min: 0
+    max: 20
+    type:
+    - cx11  
+    - cx21
+    - cpx31
+    - cpx41
+    - cx51
+    - cpx51
 deploymentsConfig:
   registry:
     enabled: false
@@ -13,21 +36,6 @@ deploymentsConfig:
       requests:
         cpu: 10m
         memory: 100Mi
-  autoscalerconfig:
-    args:
-    - --v=4
-    - --cloud-provider=hetzner
-    - --stderrthreshold=info
-    - --expander=least-waste
-    - --scale-down-enabled=true
-    - --skip-nodes-with-local-storage=false
-    - --skip-nodes-with-system-pods=false
-    - --scale-down-utilization-threshold=0.8
-    - --nodes=0:20:CX11:{{ upper .Values.location }}:cx11
-    - --nodes=0:20:CX21:{{ upper .Values.location }}:cx21
-    - --nodes=0:20:CPX31:{{ upper .Values.location }}:cpx31
-    - --nodes=0:20:CPX41:{{ upper .Values.location }}:cpx41
-    - --nodes=0:20:CPX51:{{ upper .Values.location }}:cpx51
   ccmconfig:
     env:
     - name: HCLOUD_NETWORK

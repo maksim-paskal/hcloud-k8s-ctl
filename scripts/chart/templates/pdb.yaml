@@ -8,3 +8,14 @@ spec:
   selector:
     matchLabels:
       k8s-app: kube-dns
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: hcloud-cloud-controller-manager
+  namespace: kube-system
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: hcloud-cloud-controller-manager
