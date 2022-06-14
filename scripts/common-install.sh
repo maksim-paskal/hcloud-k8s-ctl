@@ -161,13 +161,13 @@ syncFrequency: 0s
 volumeStatsAggPeriod: 0s
 featureGates:
   RotateKubeletServerCertificate: true
-serverTLSBootstrap: true
 evictionHard:
   memory.available: "100Mi"
   nodefs.available: "10%"
   nodefs.inodesFree: "5%"
 protectKernelDefaults: true
-serializeImagePulls: true
+serializeImagePulls: false
+serverTLSBootstrap: true
 EOF
 
 cat <<EOF | tee /etc/default/kubelet
