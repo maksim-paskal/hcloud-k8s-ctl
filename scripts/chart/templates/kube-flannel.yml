@@ -212,6 +212,11 @@ spec:
           capabilities:
             add: ["NET_ADMIN", "NET_RAW"]
         env:
+        # use internal network
+        - name: FLANNELD_IFACE
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
         - name: POD_NAME
           valueFrom:
             fieldRef:

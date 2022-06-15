@@ -566,6 +566,11 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 		return errors.Wrap(err, "error in create network")
 	}
 
+	err = api.createFirewall()
+	if err != nil {
+		return errors.Wrap(err, "error in create firewall")
+	}
+
 	err = api.createSSHKey()
 	if err != nil {
 		return errors.Wrap(err, "error in create sshkey")
@@ -614,7 +619,7 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 	return nil
 }
 
-func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop
+func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop,funlen
 	log.Info("Deleting cluster...")
 
 	k8sNetwork, _, _ := api.hcloudClient.Network.Get(ctx, config.Get().ClusterName)
@@ -669,6 +674,18 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop
 		_, err := api.hcloudClient.PlacementGroup.Delete(ctx, placementGroup)
 		if err != nil {
 			log.WithError(err).Warnf("error deleting PlacementGroup=%s", placementGroup.Name)
+		}
+	}
+
+	k8sFirewalls, _, _ := api.hcloudClient.Firewall.List(ctx, hcloud.FirewallListOpts{
+		ListOpts: hcloud.ListOpts{
+			LabelSelector: "cluster=" + config.Get().ClusterName,
+		},
+	})
+	for _, k8sFirewall := range k8sFirewalls {
+		_, err := api.hcloudClient.Firewall.Delete(ctx, k8sFirewall)
+		if err != nil {
+			log.WithError(err).Warn("error deleting Firewall")
 		}
 	}
 }
@@ -921,4 +938,130 @@ func (api *ApplicationAPI) UpgradeControlPlane() {
 	}
 
 	log.Info("Cluster upgraded!")
+}
+
+func (api *ApplicationAPI) createFirewall() error { //nolint:funlen
+	log.Info("Creating firewall...")
+
+	_, anyIPv4, _ := net.ParseCIDR("0.0.0.0/0")
+	_, anyIPv6, _ := net.ParseCIDR("::/0")
+	_, clusterNetwork, _ := net.ParseCIDR(config.Get().IPRange)
+
+	sharedRules := []hcloud.FirewallRule{
+		{
+			Direction:   hcloud.FirewallRuleDirectionIn,
+			SourceIPs:   []net.IPNet{*anyIPv4, *anyIPv6},
+			Protocol:    "tcp",
+			Port:        hcloud.String("22"),
+			Description: hcloud.String("SSH to server"),
+		},
+		{
+			Direction:   hcloud.FirewallRuleDirectionIn,
+			SourceIPs:   []net.IPNet{*clusterNetwork},
+			Protocol:    "udp",
+			Port:        hcloud.String("8285"),
+			Description: hcloud.String("flannel overlay network - udp backend"),
+		},
+		{
+			Direction:   hcloud.FirewallRuleDirectionIn,
+			SourceIPs:   []net.IPNet{*clusterNetwork},
+			Protocol:    "udp",
+			Port:        hcloud.String("8472"),
+			Description: hcloud.String("flannel overlay network - vxlan backend"),
+		},
+	}
+
+	// https://kubernetes.io/docs/reference/ports-and-protocols/
+	controlPlane := hcloud.FirewallCreateOpts{
+		Name: config.Get().ClusterName + "-controlplane",
+		Labels: map[string]string{
+			"cluster": config.Get().ClusterName,
+		},
+		ApplyTo: []hcloud.FirewallResource{
+			{
+				Type: hcloud.FirewallResourceTypeLabelSelector,
+				LabelSelector: &hcloud.FirewallResourceLabelSelector{
+					Selector: "role=master",
+				},
+			},
+		},
+		Rules: append(sharedRules, []hcloud.FirewallRule{
+			{
+				Direction:   hcloud.FirewallRuleDirectionIn,
+				SourceIPs:   []net.IPNet{*anyIPv4, *anyIPv6}, // flannel do not start if only clusternetwork
+				Protocol:    "tcp",
+				Port:        hcloud.String("6443"),
+				Description: hcloud.String("Kubernetes API server"),
+			},
+			{
+				Direction:   hcloud.FirewallRuleDirectionIn,
+				SourceIPs:   []net.IPNet{*anyIPv4, *anyIPv6}, // other master nodes can not connect if only clusternetwork
+				Protocol:    "tcp",
+				Port:        hcloud.String("2379-2380"),
+				Description: hcloud.String("etcd server client API"),
+			},
+			{
+				Direction:   hcloud.FirewallRuleDirectionIn,
+				SourceIPs:   []net.IPNet{*clusterNetwork},
+				Protocol:    "tcp",
+				Port:        hcloud.String("10250"),
+				Description: hcloud.String("Kubelet API"),
+			},
+			{
+				Direction:   hcloud.FirewallRuleDirectionIn,
+				SourceIPs:   []net.IPNet{*clusterNetwork},
+				Protocol:    "tcp",
+				Port:        hcloud.String("10259"),
+				Description: hcloud.String("kube-scheduler"),
+			},
+			{
+				Direction:   hcloud.FirewallRuleDirectionIn,
+				SourceIPs:   []net.IPNet{*clusterNetwork},
+				Protocol:    "tcp",
+				Port:        hcloud.String("10257"),
+				Description: hcloud.String("kube-controller-manager"),
+			},
+		}...),
+	}
+
+	workers := hcloud.FirewallCreateOpts{
+		Name: config.Get().ClusterName + "-workers",
+		Labels: map[string]string{
+			"cluster": config.Get().ClusterName,
+		},
+		ApplyTo: []hcloud.FirewallResource{
+			{
+				Type: hcloud.FirewallResourceTypeLabelSelector,
+				LabelSelector: &hcloud.FirewallResourceLabelSelector{
+					Selector: "hcloud/node-group",
+				},
+			},
+		},
+		Rules: append(sharedRules, []hcloud.FirewallRule{
+			{
+				Direction:   hcloud.FirewallRuleDirectionIn,
+				SourceIPs:   []net.IPNet{*clusterNetwork},
+				Protocol:    "tcp",
+				Port:        hcloud.String("10250"),
+				Description: hcloud.String("Kubelet API"),
+			},
+			{
+				Direction: hcloud.FirewallRuleDirectionIn,
+				SourceIPs: []net.IPNet{*clusterNetwork},
+				Protocol:  "tcp",
+				Port: hcloud.String("30000-32767	"),
+				Description: hcloud.String("NodePort Services"),
+			},
+		}...),
+	}
+
+	if _, _, err := api.hcloudClient.Firewall.Create(ctx, controlPlane); err != nil {
+		return errors.Wrap(err, "can not create controlplane firewall")
+	}
+
+	if _, _, err := api.hcloudClient.Firewall.Create(ctx, workers); err != nil {
+		return errors.Wrap(err, "can not create workers firewall")
+	}
+
+	return nil
 }
