@@ -39,6 +39,7 @@ type cliArgs struct {
 	AdhocCommand     *string
 	AdhocCopyNewFile *bool
 	AdhocMasters     *bool
+	AdhocUser        *string
 }
 
 type masterServers struct {
@@ -102,6 +103,7 @@ var cliArguments = cliArgs{
 	AdhocCommand:     flag.String("adhoc.command", "", "command to adhoc action"),
 	AdhocCopyNewFile: flag.Bool("adhoc.copynewfile", false, "copy new files to adhoc action"),
 	AdhocMasters:     flag.Bool("adhoc.master", false, "run adhoc also on master servers"),
+	AdhocUser:        flag.String("adhoc.user", "", "ssh user for adhoc action"),
 }
 
 func defaultConfig() Type { //nolint:funlen

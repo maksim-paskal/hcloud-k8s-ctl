@@ -77,6 +77,7 @@ func main() { //nolint:cyclop
 		}
 
 		applicationAPI.ExecuteAdHoc(
+			*config.Get().CliArgs.AdhocUser,
 			*config.Get().CliArgs.AdhocCommand,
 			*config.Get().CliArgs.AdhocMasters,
 			*config.Get().CliArgs.AdhocCopyNewFile,

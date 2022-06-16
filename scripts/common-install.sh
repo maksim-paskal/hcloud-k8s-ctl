@@ -40,6 +40,41 @@ nfs-common \
 # hold linux kernel update on server restart
 apt-mark hold "linux-image-$(uname -r)" "linux-headers-$(uname -r)"
 
+# create new user to ssh into server
+hcloud_user=hcloud-user
+if ! id -u "$hcloud_user" > /dev/null 2>&1; then
+  groupadd --gid 1000 $hcloud_user
+  useradd -rm -d /home/$hcloud_user -s /bin/bash -g 1000 -u 1000 $hcloud_user
+  mkdir -p /home/$hcloud_user/.ssh
+  cp /root/.ssh/authorized_keys /home/$hcloud_user/.ssh
+  chown -R $hcloud_user:$hcloud_user /home/$hcloud_user
+  echo "$hcloud_user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+fi
+
+cat > /etc/ssh/sshd_config <<EOF
+AllowUsers hcloud-user
+
+PermitRootLogin no
+PasswordAuthentication no
+ChallengeResponseAuthentication no
+UsePAM yes
+AuthenticationMethods publickey
+PubkeyAuthentication yes
+PermitEmptyPasswords no
+
+PrintMotd no
+AcceptEnv LANG LC_*
+Subsystem sftp /usr/lib/openssh/sftp-server
+
+AllowTcpForwarding no
+X11Forwarding no
+AllowAgentForwarding no
+EOF
+
+# restart sshd to apply new config
+sshd -t
+systemctl restart sshd.service
+
 # disable swap
 swapoff -a
 

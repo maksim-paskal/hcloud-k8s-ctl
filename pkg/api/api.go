@@ -36,6 +36,7 @@ type ApplicationAPI struct {
 	hcloudClient      *hcloud.Client
 	masterClusterJoin string
 	clusterKubeConfig string
+	sshRootUser       string
 }
 
 func NewApplicationAPI() (*ApplicationAPI, error) {
@@ -48,6 +49,8 @@ func NewApplicationAPI() (*ApplicationAPI, error) {
 	if err := api.validateConfig(); err != nil {
 		return &api, err
 	}
+
+	api.sshRootUser = "hcloud-user"
 
 	return &api, nil
 }
@@ -274,6 +277,9 @@ func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 	log.Info("Init first master node...")
 
+	// hetzner cloud default user is root
+	api.sshRootUser = "root"
+
 	serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, 1)
 
 	retryCount := 0
@@ -323,6 +329,8 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 		log.Debugf("stderr=%s", stderr)
 
 		log.Info("Get join command...")
+
+		api.sshRootUser = "hcloud-user"
 
 		stdout, stderr, err = api.execCommand(serverIP, "cat /root/scripts/join-master.sh")
 		if err != nil {
@@ -677,6 +685,9 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop,funlen
 		}
 	}
 
+	log.Debug("Wait some time for deleting firewall...")
+	time.Sleep(3 * time.Second) //nolint:gomnd
+
 	k8sFirewalls, _, _ := api.hcloudClient.Firewall.List(ctx, hcloud.FirewallListOpts{
 		ListOpts: hcloud.ListOpts{
 			LabelSelector: "cluster=" + config.Get().ClusterName,
@@ -691,7 +702,7 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop,funlen
 }
 
 func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string, string, error) {
-	log.Debugf("ipAddress=%s,command=%s", ipAddress, command)
+	log.Debugf("user=%s,ipAddress=%s,command=%s", api.sshRootUser, ipAddress, command)
 
 	privateKey, err := ioutil.ReadFile(config.Get().SSHPrivateKey)
 	if err != nil {
@@ -704,7 +715,7 @@ func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string
 	}
 
 	config := &ssh.ClientConfig{
-		User:            "root",
+		User:            api.sshRootUser,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(), //nolint:gosec
 		Auth: []ssh.AuthMethod{
 			ssh.PublicKeys(key),
@@ -727,8 +738,14 @@ func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string
 	session.Stdout = &stdout
 	session.Stderr = &stderr
 
-	err = session.Run(command)
+	sshCommand := fmt.Sprintf(`echo "%s" | base64 -d | sudo bash`, base64.StdEncoding.EncodeToString([]byte(command)))
+
+	log.Debug(sshCommand)
+
+	err = session.Run(sshCommand)
 	if err != nil {
+		log.Error(stdout.String(), stderr.String())
+
 		return stdout.String(), stderr.String(), err
 	}
 
@@ -808,8 +825,12 @@ func (api *ApplicationAPI) PatchClusterDeployment() {
 	log.Info("Cluster pached!")
 }
 
-func (api *ApplicationAPI) ExecuteAdHoc(command string, runOnMaster bool, copyNewScripts bool) { //nolint:funlen
+func (api *ApplicationAPI) ExecuteAdHoc(user string, command string, runOnMaster bool, copyNewScripts bool) { //nolint:funlen,lll
 	log.Info("Get worker nodes...")
+
+	if len(user) > 0 {
+		api.sshRootUser = user
+	}
 
 	allServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
