@@ -1,6 +1,9 @@
+hetznerToken:
+  main: some-token-string
+  csi: null
+  ccm: null
 clusterName: k8s
 location: nbg1
-workersCount: 20
 autoscaler:
   enabled: true
   args:
@@ -12,10 +15,13 @@ autoscaler:
   - --skip-nodes-with-local-storage=false
   - --skip-nodes-with-system-pods=false
   - --scale-down-utilization-threshold=0.8
-  workers:
-  - datacenter: ""
+  defaults:
     min: 0
     max: 20
+  workers:
+  - location: ""
+    min: 0
+    max: 0
     type:
     - cx11  
     - cx21
@@ -23,7 +29,13 @@ autoscaler:
     - cpx41
     - cx51
     - cpx51
-deploymentsConfig:
+deployments:
+  nfs:
+    server:
+      enabled: false
+      clusterIP: 10.100.0.100
+    nfs-subdir-external-provisioner:
+      enabled: false
   registry:
     enabled: false
     replicas: 2
@@ -44,3 +56,20 @@ deploymentsConfig:
       value: "true"
     - name: HCLOUD_LOAD_BALANCERS_LOCATION
       value: "{{ lower .Values.location }}"
+
+nfs-subdir-external-provisioner:
+  replicaCount: 2
+  fullnameOverride: nfs-subdir-external-provisioner
+  resources:
+    limits:
+      cpu: 100m
+      memory: 300Mi
+  nfs:
+    server: 10.100.0.100
+    path: /
+    mountOptions:
+    - nconnect=8  # only supported on linux kernel version >= 5.3
+    - nfsvers=4.1
+  storageClass:
+    name: nfs
+    archiveOnDelete: false

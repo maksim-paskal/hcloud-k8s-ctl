@@ -12,7 +12,10 @@ limitations under the License.
 */
 package api
 
-import "io/fs"
+import (
+	"io/fs"
+	"time"
+)
 
 const commonExecCommand = `#!/bin/bash
 set -ex
@@ -31,3 +34,9 @@ chmod +x /root/scripts/*.sh
 `
 
 const kubeconfigFileMode = fs.FileMode(0o600)
+
+const (
+	hcloudLoadBalancerInterval = 15 * time.Second
+	hcloudLoadBalancerTimeout  = 10 * time.Second
+	hcloudLoadBalancerRetries  = 3
+)

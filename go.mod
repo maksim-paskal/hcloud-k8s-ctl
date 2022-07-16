@@ -3,7 +3,7 @@ module github.com/maksim-paskal/hcloud-k8s-ctl
 go 1.18
 
 require (
-	github.com/hetznercloud/hcloud-go v1.33.2
+	github.com/hetznercloud/hcloud-go v1.34.0
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e

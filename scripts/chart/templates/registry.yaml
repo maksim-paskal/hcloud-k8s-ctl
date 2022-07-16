@@ -1,16 +1,16 @@
-{{ if .Values.deploymentsConfig.registry.enabled }}
+{{ if .Values.deployments.registry.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: docker-registry-env
   namespace: kube-system
 data:
-  REGISTRY_HTTP_SECRET: {{ .Values.deploymentsConfig.registry.secret | quote }}
+  REGISTRY_HTTP_SECRET: {{ .Values.deployments.registry.secret | quote }}
   REGISTRY_HTTP_ADDR: "0.0.0.0:5000"
   REGISTRY_LOG_ACCESSLOG_DISABLED: "true"
   REGISTRY_LOG_FORMATTER: "json"
   REGISTRY_LOG_LEVEL: "warn"
-{{- range $key, $val := .Values.deploymentsConfig.registry.env }}
+{{- range $key, $val := .Values.deployments.registry.env }}
   {{ $key }}: {{ tpl $val $ | quote }}
 {{- end}}
 ---
@@ -25,7 +25,7 @@ spec:
   selector:
     matchLabels:
       app: docker-registry
-  replicas: {{ .Values.deploymentsConfig.registry.replicas }}
+  replicas: {{ .Values.deployments.registry.replicas }}
   template:
     metadata:
       labels:
@@ -48,9 +48,9 @@ spec:
       containers:
       - name: registry
         resources:
-{{ toYaml .Values.deploymentsConfig.registry.resources | indent 9 }}
-        image: {{ .Values.deploymentsConfig.registry.image }}
-        imagePullPolicy: {{ .Values.deploymentsConfig.registry.imagePullPolicy }}
+{{ toYaml .Values.deployments.registry.resources | indent 9 }}
+        image: {{ .Values.deployments.registry.image }}
+        imagePullPolicy: {{ .Values.deployments.registry.imagePullPolicy }}
         envFrom:
         - configMapRef:
             name: docker-registry-env
@@ -64,7 +64,7 @@ metadata:
     app: docker-registry
 spec:
   type: ClusterIP
-  clusterIP: {{ .Values.deploymentsConfig.registry.clusterIP }}
+  clusterIP: {{ .Values.deployments.registry.clusterIP }}
   ports:
   - name: registry
     port: 5000

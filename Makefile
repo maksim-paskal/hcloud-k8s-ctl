@@ -29,17 +29,16 @@ build:
 apply-yaml:
 	kubectl apply -f ./scripts
 apply-test:
-	kubectl apply -f examples/test-autoscaler.yaml
-	kubectl apply -f examples/test-deployment.yaml
-delete-test:
-	kubectl apply -f examples/test-autoscaler.yaml
-	kubectl delete -f examples/test-deployment.yaml
+	helm upgrade --install test ./examples/charts/test
+delete-tests:
+	helm delete test || true
 test-kubernetes-yaml:
+	helm lint ./scripts/chart
+	helm lint ./examples/charts/test
 	helm template ./scripts/chart | kubectl apply --dry-run=client --validate=true -f -
-	kubectl apply --dry-run=client --validate=true -f ./examples/test-deployment.yaml
+	helm template ./examples/charts/test | kubectl apply --dry-run=client --validate=true -f -
 download-yamls:
 	curl -sSL -o ./scripts/chart/templates/kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-	curl -sSL -o ./scripts/chart/templates/hcloud-csi.yml https://raw.githubusercontent.com/hetznercloud/csi-driver/v1.6.0/deploy/kubernetes/hcloud-csi.yml
 	curl -sSL -o ./scripts/chart/templates/metrics-server.yml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 install:
 	go run github.com/goreleaser/goreleaser@latest build \

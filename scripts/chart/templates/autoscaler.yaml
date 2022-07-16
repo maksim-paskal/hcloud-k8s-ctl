@@ -133,6 +133,7 @@ spec:
       annotations:
         prometheus.io/scrape: 'true'
         prometheus.io/port: '8085'
+        checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
     spec:
       priorityClassName: system-cluster-critical
       serviceAccountName: cluster-autoscaler
@@ -151,7 +152,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cluster-autoscaler
-        image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.2
+        image: k8s.gcr.io/autoscaling/cluster-autoscaler:v1.21.3
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -162,7 +163,7 @@ spec:
 {{ tpl (toYaml .Values.autoscaler.args) . | indent 8 }}
         {{- range $i, $worker := .Values.autoscaler.workers }}
         {{- range $y, $type := $worker.type }}
-        - --nodes={{ $worker.min }}:{{ $worker.max }}:{{ upper $type }}:{{ upper (tpl (default $.Values.location $worker.datacenter) $) }}:{{ $type }}
+        - --nodes={{ default $.Values.autoscaler.defaults.min $worker.min }}:{{ default $.Values.autoscaler.defaults.max $worker.max }}:{{ upper $type }}:{{ upper (tpl (default $.Values.location $worker.location) $) }}:{{ $type }}-{{ lower (tpl (default $.Values.location $worker.location) $) }}
         {{- end }}
         {{- end }}
         env:

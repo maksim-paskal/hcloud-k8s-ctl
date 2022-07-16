@@ -31,6 +31,7 @@ This will create 3 instance with 1 load balancer for kubernetes control plane an
 - [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
 - [Simple CSR approver for Kubernetes](https://github.com/kontena/kubelet-rubber-stamp)
 - [Docker registry (optional)](https://github.com/distribution/distribution)
+- [NFS Provisioner for Kubernetes (optional)](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner)
 
 for HA needs odd number of master nodes (minimum 3) <https://etcd.io/docs/v3.4/faq/#why-an-odd-number-of-cluster-members>
 
@@ -85,14 +86,31 @@ hcloud-k8s-ctl -action=delete
 
 ## To install NFS provisioner
 
-for testing purposes you can add [NFS Server Provisioner](https://github.com/helm/charts/tree/master/stable/nfs-server-provisioner) - please do not use it in production
+You can easy install NFS provisioner for your cluster adding to your `config.yaml` next lines
 
-```bash
-# deprecated chart but still works
-helm install \
---create-namespace \
--n nfs-server-provisioner \
-nfs-server-provisioner \
-stable/nfs-server-provisioner \
---set persistence.enabled=true
+```yaml
+deployments:
+  nfs:
+    nfs-subdir-external-provisioner:
+      enabled: true
+    server:
+      enabled: true
+```
+
+It will install [NFS Provisioner for Kubernetes (optional)](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner) with [NFS Server and Storage Class](scripts/chart/templates/nfs-server.yaml)
+
+you can easy create new NFS volumes to your pod with this PersistentVolumeClaim
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-nfs
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: nfs
 ```

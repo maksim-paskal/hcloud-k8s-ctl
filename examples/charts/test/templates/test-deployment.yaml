@@ -1,7 +1,9 @@
+{{ range $idx, $location := .Values.locations }}
+---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: csi-pvc
+  name: {{ $.Release.Name }}-{{ $location }}
 spec:
   accessModes:
   - ReadWriteOnce
@@ -13,25 +15,26 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: nginx-deployment
+  name: {{ $.Release.Name }}-{{ $location }}
 spec:
   selector:
     matchLabels:
-      app: nginx
+      app: {{ $.Release.Name }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: nginx
+        app: {{ $.Release.Name }}
     spec:
       nodeSelector:
-        beta.kubernetes.io/instance-type: cpx51
+        topology.kubernetes.io/region: {{ $location }}
+        beta.kubernetes.io/instance-type: cx21
       volumes:
       - name: my-csi-volume
         persistentVolumeClaim:
-          claimName: csi-pvc
+          claimName: {{ $.Release.Name }}-{{ $location }}
       containers:
-      - name: nginx
+      - name: {{ $.Release.Name }}
         image: nginx:1.14.2
         resources:
           limits:
@@ -41,15 +44,4 @@ spec:
         volumeMounts:
         - mountPath: "/data"
           name: my-csi-volume
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-deployment
-spec:
-  type: LoadBalancer
-  selector:
-    app: nginx
-  ports:
-  - protocol: TCP
-    port: 80
+{{ end }}

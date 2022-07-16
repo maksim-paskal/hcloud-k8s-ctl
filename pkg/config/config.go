@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
@@ -39,6 +40,7 @@ type cliArgs struct {
 	AdhocCommand     *string
 	AdhocCopyNewFile *bool
 	AdhocMasters     *bool
+	AdhocWorkers     *bool
 	AdhocUser        *string
 }
 
@@ -54,16 +56,27 @@ type masterServers struct {
 }
 
 type autoscalerWorker struct {
-	Datacenter string
-	Min        int
-	Max        int
-	Type       []string
+	Location string
+	Min      int
+	Max      int
+	Type     []string
 }
 
-type autoscaler = struct {
-	Enabled bool
-	Args    []string
-	Workers []autoscalerWorker
+type autoscalerDefaults struct {
+	Min int
+	Max int
+}
+type autoscaler struct {
+	Enabled  bool
+	Args     []string
+	Defaults autoscalerDefaults
+	Workers  []autoscalerWorker
+}
+
+type hetznerToken struct {
+	Main string
+	Csi  string
+	Ccm  string
 }
 
 type emptyStruct struct{}
@@ -80,7 +93,7 @@ var config = Type{}
 type Type struct {
 	ClusterName        string             `yaml:"clusterName"`
 	KubeConfigPath     string             `yaml:"kubeConfigPath"`
-	HetznerToken       string             `yaml:"hetznerToken"`
+	HetznerToken       hetznerToken       `yaml:"hetznerToken"`
 	IPRange            string             `yaml:"ipRange"`
 	SSHPrivateKey      string             `yaml:"sshPrivateKey"`
 	SSHPublicKey       string             `yaml:"sshPublicKey"`
@@ -91,7 +104,7 @@ type Type struct {
 	MasterServers      masterServers      `yaml:"masterServers"`
 	MasterLoadBalancer masterLoadBalancer `yaml:"masterLoadBalancer"`
 	CliArgs            cliArgs            `yaml:"cliArgs"`
-	DeploymentsConfig  interface{}        `yaml:"deploymentsConfig"` // values.yaml in chart
+	Deployments        interface{}        `yaml:"deployments"` // values.yaml in chart
 	Autoscaler         autoscaler         `yaml:"autoscaler"`
 }
 
@@ -103,6 +116,7 @@ var cliArguments = cliArgs{
 	AdhocCommand:     flag.String("adhoc.command", "", "command to adhoc action"),
 	AdhocCopyNewFile: flag.Bool("adhoc.copynewfile", false, "copy new files to adhoc action"),
 	AdhocMasters:     flag.Bool("adhoc.master", false, "run adhoc also on master servers"),
+	AdhocWorkers:     flag.Bool("adhoc.workers", true, "run adhoc also on workers servers"),
 	AdhocUser:        flag.String("adhoc.user", "", "ssh user for adhoc action"),
 }
 
@@ -114,7 +128,9 @@ func defaultConfig() Type { //nolint:funlen
 	serverLabels["role"] = "master"
 
 	return Type{
-		HetznerToken:   os.Getenv("HCLOUD_TOKEN"),
+		HetznerToken: hetznerToken{
+			Main: os.Getenv("HCLOUD_TOKEN"),
+		},
 		ClusterName:    "k8s",
 		NetworkZone:    hcloud.NetworkZoneEUCentral,
 		Location:       defaultLocation,
@@ -142,7 +158,7 @@ func defaultConfig() Type { //nolint:funlen
 			ListenPort:       loadBalancerDefaultPort,
 			DestinationPort:  loadBalancerDefaultPort,
 		},
-		DeploymentsConfig: emptyStruct{},
+		Deployments: emptyStruct{},
 		Autoscaler: autoscaler{
 			Enabled: true,
 			Args: []string{
@@ -155,18 +171,28 @@ func defaultConfig() Type { //nolint:funlen
 				"--skip-nodes-with-system-pods=false",
 				"--scale-down-utilization-threshold=0.8",
 			},
+			Defaults: autoscalerDefaults{
+				Min: 0,
+				Max: workersCount,
+			},
 			Workers: []autoscalerWorker{
 				{
-					Min: 0,
-					Max: workersCount,
-					Type: []string{
-						"cx11",
-						"cx21",
-						"cpx31",
-						"cpx41",
-						"cx51",
-						"cpx51",
-					},
+					Location: hcloudLocationEUFalkenstein,
+					Min:      0,
+					Max:      0,
+					Type:     strings.Split(defaultAutoscalerInstances, ","),
+				},
+				{
+					Location: hcloudLocationEUNuremberg,
+					Min:      0,
+					Max:      0,
+					Type:     strings.Split(defaultAutoscalerInstances, ","),
+				},
+				{
+					Location: hcloudLocationEUHelsinki,
+					Min:      0,
+					Max:      0,
+					Type:     strings.Split(defaultAutoscalerInstances, ","),
 				},
 			},
 		},
@@ -181,12 +207,12 @@ func Load() error {
 
 	config = defaultConfig()
 
-	if len(config.HetznerToken) == 0 {
+	if len(config.HetznerToken.Main) == 0 {
 		auth, err := ioutil.ReadFile(".hcloudauth")
 		if err != nil {
 			log.Debug(err)
 		} else {
-			config.HetznerToken = string(auth)
+			config.HetznerToken.Main = string(auth)
 		}
 	}
 
@@ -213,6 +239,14 @@ func Load() error {
 	_, _, err = net.ParseCIDR(config.IPRange)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func Check() error {
+	if len(config.HetznerToken.Main) == 0 {
+		return errNoHetznerToken
 	}
 
 	return nil
