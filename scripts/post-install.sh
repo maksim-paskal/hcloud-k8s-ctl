@@ -44,7 +44,11 @@ kubeadm token create --ttl=0 --print-join-command >> /root/scripts/cloud-init.sh
 HCLOUD_CLOUD_INIT=$(base64 -w 0 < /root/scripts/cloud-init.sh)
 kubectl -n kube-system delete configmap hcloud-init || true
 kubectl -n kube-system create configmap hcloud-init --from-literal=bootstrap="$HCLOUD_CLOUD_INIT"
-kubectl -n kube-system rollout restart deploy cluster-autoscaler || true
+# shutdown current autoscaler that have wrong cloud-init configuration
+kubectl -n kube-system scale deploy cluster-autoscaler --replicas=0 || true
+
+# install dependencies
+helm dep up $SCRIPT_PATH/scripts/chart
 
 # install helm chart
 helm upgrade --install hcloud-k8s-ctl --namespace kube-system $SCRIPT_PATH/scripts/chart --values=$SCRIPT_PATH/values.yaml

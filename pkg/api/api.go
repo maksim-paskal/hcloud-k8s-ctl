@@ -43,7 +43,7 @@ func NewApplicationAPI() (*ApplicationAPI, error) {
 	log.Info("Connecting to Hetzner Cloud API...")
 
 	api := ApplicationAPI{
-		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken)),
+		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken.Main)),
 	}
 
 	if err := api.validateConfig(); err != nil {
@@ -113,7 +113,6 @@ func (api *ApplicationAPI) getCommonInstallCommand() string {
 func (api *ApplicationAPI) getInitMasterCommand(loadBalancerIP string) string {
 	return api.getCommonExecCommand() + `
 
-export HCLOUD_TOKEN=` + config.Get().HetznerToken + `
 export MASTER_LB=` + loadBalancerIP + `
 
 /root/scripts/init-master.sh
@@ -303,17 +302,13 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 			continue
 		}
 
-		loadBalancerIP := serverIP
+		log.Info("Waiting for loadBalancer...")
 
-		if config.Get().MasterCount > 1 {
-			log.Info("Waiting for loadBalancer...")
+		loadBalancerIP, err := api.waitForLoadBalancer(config.Get().ClusterName)
+		if err != nil {
+			log.WithError(err).Error()
 
-			loadBalancerIP, err = api.waitForLoadBalancer(config.Get().ClusterName)
-			if err != nil {
-				log.WithError(err).Error()
-
-				continue
-			}
+			continue
 		}
 
 		log.Info("Executing command...")
@@ -382,6 +377,18 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 		Protocol:        hcloud.LoadBalancerServiceProtocolTCP,
 		ListenPort:      &ListenPort,
 		DestinationPort: &DestinationPort,
+		HealthCheck: &hcloud.LoadBalancerCreateOptsServiceHealthCheck{
+			Protocol: hcloud.LoadBalancerServiceProtocolHTTP,
+			Port:     &ListenPort,
+			Interval: hcloud.Duration(hcloudLoadBalancerInterval),
+			Timeout:  hcloud.Duration(hcloudLoadBalancerTimeout),
+			Retries:  hcloud.Int(hcloudLoadBalancerRetries),
+			HTTP: &hcloud.LoadBalancerCreateOptsServiceHealthCheckHTTP{
+				Path:        hcloud.String("/healthz"),
+				StatusCodes: []string{"2??"},
+				TLS:         hcloud.Bool(true),
+			},
+		},
 	}
 
 	_, _, err = api.hcloudClient.LoadBalancer.Create(ctx, hcloud.LoadBalancerCreateOpts{
@@ -391,7 +398,6 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 		Network:          k8sNetwork,
 		Services:         []hcloud.LoadBalancerCreateOptsService{k8sService},
 	})
-
 	if err != nil {
 		return err
 	}
@@ -451,14 +457,12 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 
 	var placementGroupResults hcloud.PlacementGroupCreateResult
 
-	if config.Get().MasterCount > 1 {
-		placementGroupResults, _, err = api.hcloudClient.PlacementGroup.Create(ctx, hcloud.PlacementGroupCreateOpts{
-			Name: config.Get().MasterServers.PlacementGroupName,
-			Type: hcloud.PlacementGroupTypeSpread,
-		})
-		if err != nil {
-			return err
-		}
+	placementGroupResults, _, err = api.hcloudClient.PlacementGroup.Create(ctx, hcloud.PlacementGroupCreateOpts{
+		Name: config.Get().MasterServers.PlacementGroupName,
+		Type: hcloud.PlacementGroupTypeSpread,
+	})
+	if err != nil {
+		return err
 	}
 
 	for i := 1; i <= config.Get().MasterCount; i++ {
@@ -477,9 +481,7 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 			StartAfterCreate: &startAfterCreate,
 		}
 
-		if config.Get().MasterCount > 1 {
-			prop.PlacementGroup = placementGroupResults.PlacementGroup
-		}
+		prop.PlacementGroup = placementGroupResults.PlacementGroup
 
 		// install kubelet kubeadm on server start
 		if i > 1 {
@@ -498,14 +500,12 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 				return errRetryLimitReached
 			}
 
-			if config.Get().MasterCount > 1 {
-				err = api.attachToBalancer(serverResults, k8sLoadBalancer)
-				if err != nil {
-					log.WithError(err).Debug()
-					time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
+			err = api.attachToBalancer(serverResults, k8sLoadBalancer)
+			if err != nil {
+				log.WithError(err).Debug()
+				time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
 
-					continue
-				}
+				continue
 			}
 
 			break
@@ -584,11 +584,9 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 		return errors.Wrap(err, "error in create sshkey")
 	}
 
-	if config.Get().MasterCount > 1 {
-		err = api.createLoadBalancer()
-		if err != nil {
-			return errors.Wrap(err, "error in create loadbalancer")
-		}
+	err = api.createLoadBalancer()
+	if err != nil {
+		return errors.Wrap(err, "error in create loadbalancer")
 	}
 
 	err = api.createServer()
@@ -825,20 +823,28 @@ func (api *ApplicationAPI) PatchClusterDeployment() {
 	log.Info("Cluster pached!")
 }
 
-func (api *ApplicationAPI) ExecuteAdHoc(user string, command string, runOnMaster bool, copyNewScripts bool) { //nolint:funlen,lll
-	log.Info("Get worker nodes...")
+func (api *ApplicationAPI) ExecuteAdHoc(user string, command string, runOnMasters bool, runOnWorkers bool, copyNewScripts bool) { //nolint:funlen,lll,cyclop
+	log.Info("Executing adhoc...")
 
 	if len(user) > 0 {
 		api.sshRootUser = user
 	}
 
-	allServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
-		ListOpts: hcloud.ListOpts{
-			LabelSelector: "hcloud/node-group",
-		},
-	})
+	var allServers []*hcloud.Server
 
-	if runOnMaster {
+	if runOnWorkers {
+		log.Info("Get worker nodes...")
+
+		workerServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
+			ListOpts: hcloud.ListOpts{
+				LabelSelector: "hcloud/node-group",
+			},
+		})
+
+		allServers = append(allServers, workerServers...)
+	}
+
+	if runOnMasters {
 		log.Info("Get master nodes...")
 
 		masterServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
@@ -848,6 +854,12 @@ func (api *ApplicationAPI) ExecuteAdHoc(user string, command string, runOnMaster
 		})
 
 		allServers = append(allServers, masterServers...)
+	}
+
+	if len(allServers) == 0 {
+		log.Error("No servers found")
+
+		return
 	}
 
 	adhocStatus := make(map[string]string)

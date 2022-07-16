@@ -12,18 +12,6 @@ limitations under the License.
 */
 package config
 
-import "time"
+import "errors"
 
-const (
-	masterServersCount          = 3
-	workersCount                = 20
-	loadBalancerDefaultPort     = 6443
-	waitTimeInRetry             = 3 * time.Second
-	retryTimeLimit              = 20
-	defaultLocation             = hcloudLocationEUFalkenstein
-	defaultDatacenter           = hcloudLocationEUFalkenstein + "-dc14"
-	defaultAutoscalerInstances  = "cx21,cpx21,cx31,cpx31,cx41,cpx41,cx51,cpx51"
-	hcloudLocationEUFalkenstein = "fsn1"
-	hcloudLocationEUNuremberg   = "nbg1"
-	hcloudLocationEUHelsinki    = "hel1"
-)
+var errNoHetznerToken = errors.New("hetzner token is not set")

@@ -15,17 +15,12 @@
 # limitations under the License.
 set -ex
 
-/root/scripts/common-install.sh
+export KERNEL_VERSION=5.4.0-122-generic
 
-cat<<EOF > /root/scripts/kubeadm-config.yaml
-apiVersion: kubeadm.k8s.io/v1beta2
-kind: ClusterConfiguration
-controlPlaneEndpoint: $MASTER_LB:6443
-networking:
-  podSubnet: "10.244.0.0/16" # --pod-network-cidr
-EOF
+apt update
+apt install -y linux-image-$KERNEL_VERSION linux-headers-$KERNEL_VERSION
 
-kubeadm init --cri-socket=unix:///run/containerd/containerd.sock --upload-certs --config=/root/scripts/kubeadm-config.yaml --v=10
+apt -y autoremove
+apt -y autoclean
 
-# create token for master
-kubeadm token create --print-join-command --certificate-key "$(kubeadm init phase upload-certs --upload-certs | tail -1)" > /root/scripts/join-master.sh
+reboot

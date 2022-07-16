@@ -1,0 +1,60 @@
+{{ if .Values.deployments.nfs.server.enabled }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: nfs-server
+  labels:
+    app: nfs-server
+spec:
+  type: ClusterIP
+  clusterIP: {{ .Values.deployments.nfs.server.clusterIP }}
+  selector:
+    app: nfs-server
+  ports:
+  - name: tcp-2049
+    port: 2049
+    protocol: TCP
+  - name: udp-111
+    port: 111
+    protocol: UDP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nfs-server
+spec:
+  serviceName: "nfs-server"
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nfs-server
+  template:
+    metadata:
+      name: nfs-server
+      labels:
+        app: nfs-server
+    spec:
+      containers:
+      - name: nfs-server
+        image: itsthenetwork/nfs-server-alpine:12
+        env:
+        - name: SHARED_DIRECTORY
+          value: "/exports"
+        volumeMounts:
+        - mountPath: /exports
+          name: nfs-data
+        securityContext:
+          privileged: true
+        resources:
+          requests:
+            cpu: "50m"
+            memory: "300Mi"
+  volumeClaimTemplates:
+  - metadata:
+      name: nfs-data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 200Gi
+{{ end }}

@@ -27,10 +27,55 @@ cliArgs:
   loglevel: INFO
   configpath: config.yaml
   action: list-configurations
-deploymentsConfig:
-  ccmconfig:
-    env:
-      - name: HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP
-        value: "true"
-      - name: HCLOUD_LOAD_BALANCERS_LOCATION
-        value: "{{ lower .Values.location }}"
+deployments: {}
+autoscaler:
+  enabled: true
+  args:
+    - --v=4
+    - --cloud-provider=hetzner
+    - --stderrthreshold=info
+    - --expander=least-waste
+    - --scale-down-enabled=true
+    - --skip-nodes-with-local-storage=false
+    - --skip-nodes-with-system-pods=false
+    - --scale-down-utilization-threshold=0.8
+  defaults:
+    min: 0
+    max: 20
+  workers:
+    - location: fsn1
+      min: 0
+      max: 0
+      type:
+        - cx21
+        - cpx21
+        - cx31
+        - cpx31
+        - cx41
+        - cpx41
+        - cx51
+        - cpx51
+    - location: nbg1
+      min: 0
+      max: 0
+      type:
+        - cx21
+        - cpx21
+        - cx31
+        - cpx31
+        - cx41
+        - cpx41
+        - cx51
+        - cpx51
+    - location: hel1
+      min: 0
+      max: 0
+      type:
+        - cx21
+        - cpx21
+        - cx31
+        - cpx31
+        - cx41
+        - cpx41
+        - cx51
+        - cpx51

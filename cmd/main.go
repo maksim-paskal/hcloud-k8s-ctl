@@ -29,7 +29,7 @@ var (
 	versionFlag = flag.Bool("version", false, "version")
 )
 
-func main() { //nolint:cyclop
+func main() { //nolint:cyclop,funlen
 	flag.Parse()
 
 	if *versionFlag {
@@ -53,6 +53,10 @@ func main() { //nolint:cyclop
 	log.SetLevel(logLevel)
 
 	log.Infof("Loaded config:\n%s\n", config.String())
+
+	if err := config.Check(); err != nil {
+		log.WithError(err).Fatal("error checking config")
+	}
 
 	applicationAPI, err := api.NewApplicationAPI()
 	if err != nil {
@@ -80,6 +84,7 @@ func main() { //nolint:cyclop
 			*config.Get().CliArgs.AdhocUser,
 			*config.Get().CliArgs.AdhocCommand,
 			*config.Get().CliArgs.AdhocMasters,
+			*config.Get().CliArgs.AdhocWorkers,
 			*config.Get().CliArgs.AdhocCopyNewFile,
 		)
 	case "upgrade-controlplane":

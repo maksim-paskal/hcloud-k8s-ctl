@@ -1,0 +1,24 @@
+# separates tokens need to minimize error rate limit
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hcloud
+type: Opaque
+data:
+  token: {{ .Values.hetznerToken.main | b64enc | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hcloud-csi
+type: Opaque
+data:
+  token: {{ default .Values.hetznerToken.main .Values.hetznerToken.csi | b64enc | quote }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: hcloud-ccm
+type: Opaque
+data:
+  token: {{ default .Values.hetznerToken.main .Values.hetznerToken.ccm | b64enc | quote }}
