@@ -26,6 +26,9 @@ timeout: 10
 debug: false
 EOF
 
+# start all required services on host
+systemctl start containerd
+
 # stop all containerd containers if running
 crictl stopp $(crictl pods -q) || true
 crictl rmp $(crictl pods -q) || true
@@ -46,6 +49,9 @@ sleep 5s
 # delete all pods
 for mount in $(mount | grep '/var/lib/kubelet' | grep 'type nfs' | awk '{ print $3 }'); do umount --read-only --force --lazy $mount; done
 for mount in $(mount | grep '/var/lib/kubelet' | awk '{ print $3 }'); do umount $mount; done
+
+# wait some time before delete
+sleep 5s
 
 # delete pods folder
 rm -rf /var/lib/kubelet/pods/ \

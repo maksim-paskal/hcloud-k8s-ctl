@@ -864,7 +864,10 @@ func (api *ApplicationAPI) ExecuteAdHoc(user string, command string, runOnMaster
 
 	adhocStatus := make(map[string]string)
 
-	var wg sync.WaitGroup
+	var (
+		wg    sync.WaitGroup
+		mutex sync.Mutex
+	)
 
 	wg.Add(len(allServers))
 
@@ -900,7 +903,9 @@ func (api *ApplicationAPI) ExecuteAdHoc(user string, command string, runOnMaster
 
 			log.Infof("stdout=%s,stderr=%s", stdout, stderr)
 
+			mutex.Lock()
 			adhocStatus[server.Name] = "ok"
+			mutex.Unlock()
 		}(server)
 	}
 
