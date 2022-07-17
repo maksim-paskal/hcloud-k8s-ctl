@@ -28,6 +28,7 @@ EOF
 
 # stop all containerd containers if running
 crictl stopp $(crictl pods -q) || true
+crictl rm $(crictl ps -a -q) || true
 
 # clear iptables
 iptables -F && iptables -X
