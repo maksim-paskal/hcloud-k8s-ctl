@@ -24,12 +24,13 @@ for other OS download binnary from [release pages](https://github.com/maksim-pas
 
 This will create 3 instance with 1 load balancer for kubernetes control plane and 1 kubernetes worker node,after successful installation cluster will have:
 
-- [Kubernetes Autoscaler](https://github.com/kubernetes/autoscaler/releases/tag/cluster-autoscaler-1.21.0)
+- [Kubernetes v1.23](https://github.com/kubernetes/kubernetes)
+- [Kubernetes Autoscaler](https://github.com/kubernetes/autoscaler)
 - [Flannel](https://github.com/flannel-io/flannel)
 - [Kubernetes Cloud Controller Manager for Hetzner Cloud](https://github.com/hetznercloud/hcloud-cloud-controller-manager)
 - [Container Storage Interface driver for Hetzner Cloud](https://github.com/hetznercloud/csi-driver)
 - [Kubernetes Metrics Server](https://github.com/kubernetes-sigs/metrics-server)
-- [Simple CSR approver for Kubernetes](https://github.com/kontena/kubelet-rubber-stamp)
+- [Simple CSR approver for Kubernetes](https://github.com/postfinance/kubelet-csr-approver)
 - [Docker registry (optional)](https://github.com/distribution/distribution)
 - [NFS Provisioner for Kubernetes (optional)](https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner)
 

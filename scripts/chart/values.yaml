@@ -73,3 +73,6 @@ nfs-subdir-external-provisioner:
   storageClass:
     name: nfs
     archiveOnDelete: false
+
+kubelet-csr-approver:
+  bypassDnsResolution: true

@@ -88,7 +88,9 @@ func main() { //nolint:cyclop,funlen
 			*config.Get().CliArgs.AdhocCopyNewFile,
 		)
 	case "upgrade-controlplane":
-		applicationAPI.UpgradeControlPlane()
+		applicationAPI.UpgradeControlPlane(
+			*config.Get().CliArgs.UpgradeControlPlaneVersion,
+		)
 	default:
 		log.Fatal("unknown action")
 	}

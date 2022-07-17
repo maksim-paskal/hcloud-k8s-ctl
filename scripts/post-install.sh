@@ -36,9 +36,11 @@ rm -rf linux-amd64
 # delete all tokens
 kubeadm token list -o jsonpath='{.token}{"\n"}' | xargs kubeadm token delete
 
-# create token for nodes
+# create token to join worker nodes
 cp /root/scripts/common-install.sh /root/scripts/cloud-init.sh
-kubeadm token create --ttl=0 --print-join-command >> /root/scripts/cloud-init.sh
+JOIN=$(kubeadm token create --ttl=0 --print-join-command)
+
+echo "$JOIN --cri-socket=unix:///run/containerd/containerd.sock" >> /root/scripts/cloud-init.sh
 
 # create autoscaler configuration
 HCLOUD_CLOUD_INIT=$(base64 -w 0 < /root/scripts/cloud-init.sh)

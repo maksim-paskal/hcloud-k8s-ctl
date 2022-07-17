@@ -15,9 +15,10 @@
 # limitations under the License.
 set -ex
 
-export KUBERNETES_VERSION=1.21.13
-export DOCKER_VERSION=5:20.10.13~3-0~ubuntu-focal
-export CONTAINERD_VERSION=1.4.13-1
+: "${KUBERNETES_VERSION:=1.23.9}"
+
+export DOCKER_VERSION=5:20.10.17~3-0~ubuntu-focal
+export CONTAINERD_VERSION=1.6.6-1
 export PAUSE_CONTAINER=k8s.gcr.io/pause:3.2
 
 # https://containerd.io/releases/#kubernetes-support
@@ -189,10 +190,6 @@ apt-mark hold kubelet kubeadm kubectl
 # stop all services
 systemctl stop kubelet containerd docker docker.socket
 
-# disable docker on host
-systemctl disable docker docker.socket
-rm -rf /var/run/docker.sock
-
 INTERNAL_IP=$(hostname -I | awk '{print $2}')
 
 mkdir -p /etc/kubernetes/kubelet/
@@ -256,8 +253,8 @@ apt -y autoclean
 
 # start all node services
 systemctl daemon-reload
-systemctl enable kubelet containerd
-systemctl start kubelet containerd
+systemctl enable kubelet containerd docker docker.socket
+systemctl start kubelet containerd docker docker.socket
 
 # pull sandbox image
 ctr --namespace k8s.io image pull $PAUSE_CONTAINER

@@ -6,3 +6,6 @@ dependencies:
   version: "4.0.16"
   repository: "https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner"
   condition: deployments.nfs.nfs-subdir-external-provisioner.enabled
+- name: kubelet-csr-approver
+  version: "0.2.3"
+  repository: https://postfinance.github.io/kubelet-csr-approver

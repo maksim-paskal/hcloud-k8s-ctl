@@ -942,7 +942,7 @@ func (api *ApplicationAPI) downloadNewScripts(serverName string, serverIP string
 	return nil
 }
 
-func (api *ApplicationAPI) UpgradeControlPlane() {
+func (api *ApplicationAPI) UpgradeControlPlane(version string) {
 	log.Info("Executing controlplane upgrade...")
 
 	for i := 1; i <= config.Get().MasterCount; i++ {
@@ -961,7 +961,13 @@ func (api *ApplicationAPI) UpgradeControlPlane() {
 
 		log.Info("Upgrade controlplane...")
 
-		stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/upgrade-controlplane.sh")
+		cmd := "/root/scripts/upgrade-controlplane.sh"
+
+		if len(version) > 0 {
+			cmd = fmt.Sprintf("KUBERNETES_VERSION=%s %s", version, cmd)
+		}
+
+		stdout, stderr, err := api.execCommand(serverIP, cmd)
 		if err != nil {
 			log.WithError(err).Fatal(stderr)
 		}
