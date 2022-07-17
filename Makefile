@@ -1,6 +1,7 @@
 KUBECONFIG=$(HOME)/.kube/hcloud
 action=list-configurations
 config=config.yaml
+args=""
 
 test:
 	./scripts/validate-license.sh
@@ -22,8 +23,12 @@ list-configurations:
 	make run action=list-configurations
 upgrade-controlplane:
 	make run action=upgrade-controlplane
+upgrade-workers: # restart all pods on worker node
+	make run action=adhoc args="-adhoc.copynewfile -adhoc.command=/root/scripts/upgrade-worker.sh"
+upgrade-workers-kernel: # upgrade kernel and restart worker node
+	make run action=adhoc args="-adhoc.copynewfile -adhoc.command=/root/scripts/upgrade-kernel.sh"
 run:
-	go run -race ./cmd -config=$(config) -action=$(action) -log.level=DEBUG
+	go run -race ./cmd -config=$(config) -action=$(action) -log.level=DEBUG $(args)
 build:
 	go run github.com/goreleaser/goreleaser@latest build --rm-dist --skip-validate
 apply-yaml:
