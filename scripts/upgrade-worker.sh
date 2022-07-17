@@ -37,8 +37,10 @@ iptables -t raw -F && iptables -t raw -X
 iptables -t mangle -F && iptables -t mangle -X
 
 # delete all pods
-for mount in $(mount | grep '/var/lib/kubelet' | awk '{ print $3 }'); do umount -f -l $mount; done
+for mount in $(mount | grep '/var/lib/kubelet' | grep 'type nfs' | awk '{ print $3 }'); do umount -f -l $mount; done
+for mount in $(mount | grep '/var/lib/kubelet' | awk '{ print $3 }'); do umount $mount; done
 
+# delete pods folder
 rm -rf /var/lib/kubelet/pods/
 
 # reconfigure containerd
