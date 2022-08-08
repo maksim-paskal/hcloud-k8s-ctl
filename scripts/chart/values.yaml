@@ -50,6 +50,8 @@ deployments:
         memory: 100Mi
   ccmconfig:
     env:
+    - name: HCLOUD_NETWORK_ROUTES_ENABLED
+      value: "false"
     - name: HCLOUD_NETWORK
       value: "{{ .Values.clusterName }}"
     - name: HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP

@@ -35,6 +35,8 @@ spec:
       labels:
         app: hcloud-cloud-controller-manager
       annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '8233'
         scheduler.alpha.kubernetes.io/critical-pod: ''
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
     spec:
@@ -70,7 +72,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       hostNetwork: true
       containers:
-        - image: paskalmaksim/hcloud-cloud-controller-manager:6982aae2
+        - image: paskalmaksim/hcloud-cloud-controller-manager:15b5eabb
           imagePullPolicy: IfNotPresent
           name: hcloud-cloud-controller-manager
           command:

@@ -111,6 +111,8 @@ spec:
       labels:
         app: hcloud-csi-controller
       annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9189'
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
     spec:
       serviceAccount: hcloud-csi
@@ -217,6 +219,8 @@ spec:
       labels:
         app: hcloud-csi
       annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9189'
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
     spec:
       tolerations:
