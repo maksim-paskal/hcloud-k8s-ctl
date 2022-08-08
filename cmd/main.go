@@ -91,6 +91,14 @@ func main() { //nolint:cyclop,funlen
 		applicationAPI.UpgradeControlPlane(
 			*config.Get().CliArgs.UpgradeControlPlaneVersion,
 		)
+	case "create-firewall":
+		err = applicationAPI.CreateFirewall(
+			*config.Get().CliArgs.CreateFirewallControlPlane,
+			*config.Get().CliArgs.CreateFirewallWorkers,
+		)
+		if err != nil {
+			log.Fatal(err)
+		}
 	default:
 		log.Fatal("unknown action")
 	}

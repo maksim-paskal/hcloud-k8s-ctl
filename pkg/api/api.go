@@ -574,7 +574,7 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 		return errors.Wrap(err, "error in create network")
 	}
 
-	err = api.createFirewall()
+	err = api.CreateFirewall(true, true)
 	if err != nil {
 		return errors.Wrap(err, "error in create firewall")
 	}
@@ -984,8 +984,12 @@ func (api *ApplicationAPI) UpgradeControlPlane(version string) {
 	log.Info("Cluster upgraded!")
 }
 
-func (api *ApplicationAPI) createFirewall() error { //nolint:funlen
+func (api *ApplicationAPI) CreateFirewall(createControlPlane, createWorker bool) error { //nolint:funlen
 	log.Info("Creating firewall...")
+
+	if !createControlPlane && !createWorker {
+		return errors.New("nothing to create, please specify at least one firewall type")
+	}
 
 	_, anyIPv4, _ := net.ParseCIDR("0.0.0.0/0")
 	_, anyIPv6, _ := net.ParseCIDR("::/0")
@@ -1090,21 +1094,25 @@ func (api *ApplicationAPI) createFirewall() error { //nolint:funlen
 				Description: hcloud.String("Kubelet API"),
 			},
 			{
-				Direction: hcloud.FirewallRuleDirectionIn,
-				SourceIPs: []net.IPNet{*clusterNetwork},
-				Protocol:  "tcp",
-				Port: hcloud.String("30000-32767	"),
+				Direction:   hcloud.FirewallRuleDirectionIn,
+				SourceIPs:   []net.IPNet{*clusterNetwork},
+				Protocol:    "tcp",
+				Port:        hcloud.String("30000-32767"),
 				Description: hcloud.String("NodePort Services"),
 			},
 		}...),
 	}
 
-	if _, _, err := api.hcloudClient.Firewall.Create(ctx, controlPlane); err != nil {
-		return errors.Wrap(err, "can not create controlplane firewall")
+	if createControlPlane {
+		if _, _, err := api.hcloudClient.Firewall.Create(ctx, controlPlane); err != nil {
+			return errors.Wrap(err, "can not create controlplane firewall")
+		}
 	}
 
-	if _, _, err := api.hcloudClient.Firewall.Create(ctx, workers); err != nil {
-		return errors.Wrap(err, "can not create workers firewall")
+	if createWorker {
+		if _, _, err := api.hcloudClient.Firewall.Create(ctx, workers); err != nil {
+			return errors.Wrap(err, "can not create workers firewall")
+		}
 	}
 
 	return nil

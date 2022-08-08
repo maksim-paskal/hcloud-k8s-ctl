@@ -43,6 +43,8 @@ type cliArgs struct {
 	AdhocWorkers               *bool
 	AdhocUser                  *string
 	UpgradeControlPlaneVersion *string
+	CreateFirewallControlPlane *bool
+	CreateFirewallWorkers      *bool
 }
 
 type masterServers struct {
@@ -113,13 +115,15 @@ type Type struct {
 var cliArguments = cliArgs{
 	LogLevel:                   flag.String("log.level", "INFO", "logging level"),
 	ConfigPath:                 flag.String("config", envDefault("CONFIG", "config.yaml"), "config path"),
-	Action:                     flag.String("action", "", "create|delete|list-configurations|patch-cluster|adhoc|upgrade-controlplane"), //nolint:lll
+	Action:                     flag.String("action", "", "create|delete|list-configurations|patch-cluster|adhoc|upgrade-controlplane|create-firewall"), //nolint:lll
 	AdhocCommand:               flag.String("adhoc.command", "", "command to adhoc action"),
 	AdhocCopyNewFile:           flag.Bool("adhoc.copynewfile", false, "copy new files to adhoc action"),
 	AdhocMasters:               flag.Bool("adhoc.master", false, "run adhoc also on master servers"),
 	AdhocWorkers:               flag.Bool("adhoc.workers", true, "run adhoc also on workers servers"),
 	AdhocUser:                  flag.String("adhoc.user", "", "ssh user for adhoc action"),
 	UpgradeControlPlaneVersion: flag.String("upgrade-controlplane.version", "", "controlplane version to upgrade"),
+	CreateFirewallControlPlane: flag.Bool("create-firewall.controlplane", false, "create firewall for controlplane"),
+	CreateFirewallWorkers:      flag.Bool("create-firewall.workers", false, "create firewall for workers"),
 }
 
 func defaultConfig() Type { //nolint:funlen
