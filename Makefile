@@ -23,6 +23,8 @@ list-configurations:
 	make run action=list-configurations
 upgrade-controlplane:
 	make run action=upgrade-controlplane
+create-firewall:
+	make run action=create-firewall
 upgrade-workers: # restart all pods on worker node
 	make run action=adhoc args="-adhoc.copynewfile -adhoc.command=/root/scripts/upgrade-worker.sh"
 upgrade-workers-kernel: # upgrade kernel and restart worker node
