@@ -38,7 +38,7 @@ ca-certificates \
 curl \
 software-properties-common \
 nfs-common \
-"linux-headers-$(uname -r)"
+linux-headers-generic
 
 # create new user to ssh into server
 hcloud_user=hcloud-user
