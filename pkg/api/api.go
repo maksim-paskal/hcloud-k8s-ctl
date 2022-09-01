@@ -17,8 +17,8 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"net"
+	"os"
 	"sync"
 	"time"
 
@@ -83,7 +83,7 @@ func (api *ApplicationAPI) saveKubeconfig() error {
 	log.Info("kubeconfig=\n" + api.clusterKubeConfig)
 	log.Infof("Saving kubeconfig to %s", config.Get().KubeConfigPath)
 
-	err := ioutil.WriteFile(
+	err := os.WriteFile(
 		config.Get().KubeConfigPath,
 		[]byte(api.clusterKubeConfig),
 		kubeconfigFileMode,
@@ -518,7 +518,7 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 func (api *ApplicationAPI) createSSHKey() error {
 	log.Info("Creating sshKey...")
 
-	publicKey, err := ioutil.ReadFile(config.Get().SSHPublicKey)
+	publicKey, err := os.ReadFile(config.Get().SSHPublicKey)
 	if err != nil {
 		return err
 	}
@@ -702,7 +702,7 @@ func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop,funlen
 func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string, string, error) {
 	log.Debugf("user=%s,ipAddress=%s,command=%s", api.sshRootUser, ipAddress, command)
 
-	privateKey, err := ioutil.ReadFile(config.Get().SSHPrivateKey)
+	privateKey, err := os.ReadFile(config.Get().SSHPrivateKey)
 	if err != nil {
 		return "", "", err
 	}

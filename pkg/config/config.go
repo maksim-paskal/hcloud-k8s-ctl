@@ -15,7 +15,6 @@ package config
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/user"
@@ -206,7 +205,7 @@ func defaultConfig() Type { //nolint:funlen
 }
 
 func Load() error {
-	configByte, err := ioutil.ReadFile(*cliArguments.ConfigPath)
+	configByte, err := os.ReadFile(*cliArguments.ConfigPath)
 	if err != nil {
 		return err
 	}
@@ -214,7 +213,7 @@ func Load() error {
 	config = defaultConfig()
 
 	if len(config.HetznerToken.Main) == 0 {
-		auth, err := ioutil.ReadFile(".hcloudauth")
+		auth, err := os.ReadFile(".hcloudauth")
 		if err != nil {
 			log.Debug(err)
 		} else {
