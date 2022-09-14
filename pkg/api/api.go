@@ -99,6 +99,7 @@ func (api *ApplicationAPI) getCommonExecCommand() string {
 	return fmt.Sprintf(commonExecCommand,
 		config.Get().MasterServers.ServersInitParams.TarGz,
 		config.Get().MasterServers.ServersInitParams.Folder,
+		api.getDeploymentValues(),
 	)
 }
 
@@ -247,9 +248,7 @@ func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 
 		log.Info("Executing command...")
 
-		postInstallCommand := fmt.Sprintf("VALUES=%s /root/scripts/post-install.sh", api.getDeploymentValues())
-
-		stdout, stderr, err := api.execCommand(serverIP, postInstallCommand)
+		stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/post-install.sh")
 		if err != nil {
 			log.WithError(err).Fatal(stderr)
 		}

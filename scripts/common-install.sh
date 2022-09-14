@@ -154,6 +154,9 @@ conf_dir = "/etc/cni/net.d"
 endpoint = ["http://10.100.0.11:5000"]
 [plugins."io.containerd.grpc.v1.cri".registry.mirrors."10.100.0.20:5000"]
 endpoint = ["http://10.100.0.20:5000"]
+
+# extra containerd config
+{{ .Values.cri.containerd.extraconfig }}
 EOF
 
 cat <<EOF | tee /etc/crictl.yaml
@@ -258,3 +261,5 @@ systemctl start kubelet containerd docker docker.socket
 
 # pull sandbox image
 ctr --namespace k8s.io image pull $PAUSE_CONTAINER
+
+# {{ .Values.ipRange }}
