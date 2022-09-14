@@ -30,7 +30,14 @@ curl -sSL -o scripts.tar.gz \
 tar -xvf scripts.tar.gz
 mv ./%s/scripts ./scripts
 
+# make scripts executables
 chmod +x /root/scripts/*.sh
+
+# initial config
+echo "%s" | base64 -d > /root/values.yaml
+
+# prepare scripts
+/root/scripts/prepare-scripts.sh
 `
 
 const kubeconfigFileMode = fs.FileMode(0o600)

@@ -23,9 +23,6 @@ export KUBECONFIG=$KUBECONFIG_PATH
 # create annotation for recent node deletion
 kubectl annotate node --overwrite -lnode-role.kubernetes.io/master cluster-autoscaler.kubernetes.io/scale-down-disabled=true
 
-# create custom user values
-echo "$VALUES" | base64 -d > $SCRIPT_PATH/values.yaml
-
 # install helm for kubernetes deploymens
 curl -o helm.tar.gz https://get.helm.sh/helm-v3.4.2-linux-amd64.tar.gz
 tar -xvf helm.tar.gz
