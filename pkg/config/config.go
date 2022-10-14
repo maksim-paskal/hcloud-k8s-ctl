@@ -104,6 +104,7 @@ type Type struct {
 	KubeConfigPath     string             `yaml:"kubeConfigPath"`
 	HetznerToken       hetznerToken       `yaml:"hetznerToken"`
 	IPRange            string             `yaml:"ipRange"`
+	IPRangeSubnet      string             `yaml:"ipRangeSubnet"`
 	SSHPrivateKey      string             `yaml:"sshPrivateKey"`
 	SSHPublicKey       string             `yaml:"sshPublicKey"`
 	MasterCount        int                `yaml:"masterCount"`
@@ -145,6 +146,8 @@ func defaultConfig() Type { //nolint:funlen
 			Main: os.Getenv("HCLOUD_TOKEN"),
 		},
 		ClusterName:    "k8s",
+		IPRange:        "10.0.0.0/16",
+		IPRangeSubnet:  "",
 		NetworkZone:    hcloud.NetworkZoneEUCentral,
 		Location:       defaultLocation,
 		Datacenter:     defaultDatacenter,
@@ -212,7 +215,7 @@ func defaultConfig() Type { //nolint:funlen
 	}
 }
 
-func Load() error {
+func Load() error { //nolint: cyclop
 	configByte, err := os.ReadFile(*cliArguments.ConfigPath)
 	if err != nil {
 		return err
@@ -227,6 +230,10 @@ func Load() error {
 		} else {
 			config.HetznerToken.Main = string(auth)
 		}
+	}
+
+	if len(config.IPRangeSubnet) == 0 {
+		config.IPRangeSubnet = config.IPRange
 	}
 
 	err = yaml.Unmarshal(configByte, &config)
@@ -250,6 +257,11 @@ func Load() error {
 	}
 
 	_, _, err = net.ParseCIDR(config.IPRange)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = net.ParseCIDR(config.IPRangeSubnet)
 	if err != nil {
 		return err
 	}

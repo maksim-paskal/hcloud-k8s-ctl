@@ -541,6 +541,11 @@ func (api *ApplicationAPI) createNetwork() error {
 		return err
 	}
 
+	_, IPRangeSubnetNet, err := net.ParseCIDR(config.Get().IPRangeSubnet)
+	if err != nil {
+		return err
+	}
+
 	k8sNetwork, _, err := api.hcloudClient.Network.Create(ctx, hcloud.NetworkCreateOpts{
 		Name:    config.Get().ClusterName,
 		IPRange: IPRangeNet,
@@ -551,7 +556,7 @@ func (api *ApplicationAPI) createNetwork() error {
 
 	k8sNetworkSubnet := hcloud.NetworkSubnet{
 		Type:        hcloud.NetworkSubnetTypeServer,
-		IPRange:     IPRangeNet,
+		IPRange:     IPRangeSubnetNet,
 		NetworkZone: config.Get().NetworkZone,
 	}
 

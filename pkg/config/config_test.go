@@ -25,6 +25,14 @@ func TestConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	if config.Get().IPRange != "11.0.0.0/16" {
+		t.Fatal("IPRange is not valid")
+	}
+
+	if config.Get().IPRangeSubnet != "11.0.0.0/17" {
+		t.Fatal("IPRangeSubnet is not valid")
+	}
+
 	if config.Get().MasterCount != 33 {
 		t.Fatal("MasterCount != 33")
 	}
