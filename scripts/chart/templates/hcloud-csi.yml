@@ -224,11 +224,8 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/config.yaml") . | sha256sum }}
     spec:
       tolerations:
-        - effect: NoExecute
-          operator: Exists
-        - effect: NoSchedule
-          operator: Exists
-        - key: CriticalAddonsOnly
+        - key: node-role.kubernetes.io/master
+          effect: NoSchedule
           operator: Exists
       affinity:
         nodeAffinity:
