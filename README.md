@@ -24,7 +24,7 @@ for other OS download binnary from [release pages](https://github.com/maksim-pas
 
 This will create 3 instance with 1 load balancer for kubernetes control plane and 1 kubernetes worker node,after successful installation cluster will have:
 
-- [Kubernetes v1.23](https://github.com/kubernetes/kubernetes)
+- [Kubernetes v1.24](https://github.com/kubernetes/kubernetes)
 - [Kubernetes Autoscaler](https://github.com/kubernetes/autoscaler)
 - [Flannel](https://github.com/flannel-io/flannel)
 - [Kubernetes Cloud Controller Manager for Hetzner Cloud](https://github.com/hetznercloud/hcloud-cloud-controller-manager)

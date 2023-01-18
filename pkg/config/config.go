@@ -89,13 +89,6 @@ type masterLoadBalancer struct {
 	DestinationPort  int
 }
 
-type criConfigContainerd struct {
-	ExtraConfig string
-}
-type criConfig struct {
-	Containerd criConfigContainerd
-}
-
 //nolint:gochecknoglobals
 var config = Type{}
 
@@ -116,7 +109,8 @@ type Type struct {
 	CliArgs            cliArgs            `yaml:"cliArgs"`
 	Deployments        interface{}        `yaml:"deployments"` // values.yaml in chart
 	Autoscaler         autoscaler         `yaml:"autoscaler"`
-	Cri                criConfig          `yaml:"cri"`
+	PreStartScript     string             `yaml:"preStartScript"`
+	PostStartScript    string             `yaml:"postStartScript"`
 }
 
 //nolint:gochecknoglobals

@@ -15,7 +15,7 @@
 # limitations under the License.
 set -ex
 
-: "${KUBERNETES_VERSION:=1.23.9}"
+: "${KUBERNETES_VERSION:=1.24.9}"
 
 export DOCKER_VERSION=5:20.10.17~3-0~ubuntu-focal
 export CONTAINERD_VERSION=1.6.6-1
@@ -139,6 +139,9 @@ default_runtime_name = "runc"
 [plugins."io.containerd.grpc.v1.cri"]
 sandbox_image = "$PAUSE_CONTAINER"
 
+[plugins."io.containerd.grpc.v1.cri".registry]
+config_path = "/etc/containerd/certs.d:/etc/docker/certs.d"
+
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
 runtime_type = "io.containerd.runc.v2"
 
@@ -148,15 +151,6 @@ SystemdCgroup = true
 [plugins."io.containerd.grpc.v1.cri".cni]
 bin_dir = "/opt/cni/bin"
 conf_dir = "/etc/cni/net.d"
-
-# internal registry
-[plugins."io.containerd.grpc.v1.cri".registry.mirrors."10.100.0.11:5000"]
-endpoint = ["http://10.100.0.11:5000"]
-[plugins."io.containerd.grpc.v1.cri".registry.mirrors."10.100.0.20:5000"]
-endpoint = ["http://10.100.0.20:5000"]
-
-# extra containerd config
-{{ .Values.cri.containerd.extraconfig }}
 EOF
 
 cat <<EOF | tee /etc/crictl.yaml
@@ -254,6 +248,9 @@ EOF
 apt -y autoremove
 apt -y autoclean
 
+# prestart script
+{{ .Values.preStartScript }}
+
 # start all node services
 systemctl daemon-reload
 systemctl enable kubelet containerd docker docker.socket
@@ -262,4 +259,5 @@ systemctl start kubelet containerd docker docker.socket
 # pull sandbox image
 ctr --namespace k8s.io image pull $PAUSE_CONTAINER
 
-# {{ .Values.ipRange }}
+# poststart script
+{{ .Values.postStartScript }}
