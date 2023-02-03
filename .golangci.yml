@@ -11,3 +11,4 @@ linters:
   - exhaustruct
   - wrapcheck
   - varnamelen
+  - musttag
