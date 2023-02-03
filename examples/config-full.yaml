@@ -1,81 +1,96 @@
 clusterName: k8s
-kubeConfigPath: ~/.kube/hcloud
-hetznerToken: some-token-string
+kubeConfigPath: /Users/mpascal/.kube/hcloud
+hetznerToken:
+    main: vIdRTyo2K8i5Rsn87Dh2aLH3xjJW15T6y9Pi1zXbkjPoz4BhGyl5aiP37w8PFQZw
+    csi: ""
+    ccm: ""
 ipRange: 10.0.0.0/16
-sshPrivateKey: ~/.ssh/id_rsa
-sshPublicKey: ~/.ssh/id_rsa.pub
+ipRangeSubnet: 10.0.0.0/16
+sshPrivateKey: /Users/mpascal/.ssh/id_rsa
+sshPublicKey: /Users/mpascal/.ssh/id_rsa.pub
 masterCount: 3
-networkZone: us-east
+networkZone: eu-central
 location: fsn1
 datacenter: fsn1-dc14
 masterServers:
-  namepattern: master-%d
-  servertype: cx21
-  image: ubuntu-20.04
-  labels:
-    role: master
-  waittimeinretry: 3s
-  retrytimelimit: 20
-  serversinitparams:
-    targz: https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/main.tar.gz
-    folder: hcloud-k8s-ctl-main
+    namepattern: master-%d
+    placementgroupname: master-placement-group
+    servertype: cx21
+    image: ubuntu-20.04
+    labels:
+        role: master
+    waittimeinretry: 3s
+    retrytimelimit: 20
+    serversinitparams:
+        targz: https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/main.tar.gz
+        folder: hcloud-k8s-ctl-main
 masterLoadBalancer:
-  loadbalancertype: lb11
-  listenport: 6443
-  destinationport: 6443
+    loadbalancertype: lb11
+    listenport: 6443
+    destinationport: 6443
 cliArgs:
-  loglevel: INFO
-  configpath: config.yaml
-  action: list-configurations
+    loglevel: DEBUG
+    configpath: config.yaml
+    action: delete
+    adhoccommand: ""
+    adhoccopynewfile: false
+    adhocmasters: false
+    adhocworkers: true
+    adhocuser: ""
+    upgradecontrolplaneversion: ""
+    createfirewallcontrolplane: false
+    createfirewallworkers: false
 deployments: {}
 autoscaler:
-  enabled: true
-  args:
-    - --v=4
-    - --cloud-provider=hetzner
-    - --stderrthreshold=info
-    - --expander=least-waste
-    - --scale-down-enabled=true
-    - --skip-nodes-with-local-storage=false
-    - --skip-nodes-with-system-pods=false
-    - --scale-down-utilization-threshold=0.8
-  defaults:
-    min: 0
-    max: 20
-  workers:
-    - location: fsn1
-      min: 0
-      max: 0
-      type:
-        - cx21
-        - cpx21
-        - cx31
-        - cpx31
-        - cx41
-        - cpx41
-        - cx51
-        - cpx51
-    - location: nbg1
-      min: 0
-      max: 0
-      type:
-        - cx21
-        - cpx21
-        - cx31
-        - cpx31
-        - cx41
-        - cpx41
-        - cx51
-        - cpx51
-    - location: hel1
-      min: 0
-      max: 0
-      type:
-        - cx21
-        - cpx21
-        - cx31
-        - cpx31
-        - cx41
-        - cpx41
-        - cx51
-        - cpx51
+    enabled: true
+    args:
+        - --v=4
+        - --cloud-provider=hetzner
+        - --stderrthreshold=info
+        - --expander=least-waste
+        - --scale-down-enabled=true
+        - --skip-nodes-with-local-storage=false
+        - --skip-nodes-with-system-pods=false
+        - --scale-down-utilization-threshold=0.8
+    defaults:
+        min: 0
+        max: 20
+    workers:
+        - location: fsn1
+          min: 0
+          max: 0
+          type:
+            - cx21
+            - cpx21
+            - cx31
+            - cpx31
+            - cx41
+            - cpx41
+            - cx51
+            - cpx51
+        - location: nbg1
+          min: 0
+          max: 0
+          type:
+            - cx21
+            - cpx21
+            - cx31
+            - cpx31
+            - cx41
+            - cpx41
+            - cx51
+            - cpx51
+        - location: hel1
+          min: 0
+          max: 0
+          type:
+            - cx21
+            - cpx21
+            - cx31
+            - cpx31
+            - cx41
+            - cpx41
+            - cx51
+            - cpx51
+preStartScript: ""
+postStartScript: ""

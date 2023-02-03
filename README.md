@@ -2,13 +2,13 @@
 
 ## Motivation
 
-AWS has eksctl tool for creating kubernetes cluster - Hetzner Cloud have no official tool for creating kubernetes cluster. This tool will create new production ready kubernetes cluster on Hetzner Cloud with minium user interaction. New cluster will be avaible in High availability mode with automatic cluster autoscaling and automatic volume creation.
+AWS has eksctl tool for creating kubernetes cluster - Hetzner Cloud have no official tool for creating kubernetes cluster. This tool will create new production ready kubernetes clusters on Hetzner Cloud with minimum user interaction. New cluster will be available in High availability mode with automatic cluster autoscaling and automatic volume creation
 
 ## Preparation
 
 - login to <https://console.hetzner.cloud> and create new project
 - select project, select in menu Security -> API Tokens and create new "Read & Write" token
-- save token to `.hcloudauth` file in current dirrectory
+- save token to `.hcloudauth` file in current directory
 
 ## Install binnary
 
@@ -22,7 +22,7 @@ for other OS download binnary from [release pages](https://github.com/maksim-pas
 
 ## Create kubernetes cluster
 
-This will create 3 instance with 1 load balancer for kubernetes control plane and 1 kubernetes worker node,after successful installation cluster will have:
+This will create 3 instances with 1 load balancer for the kubernetes control plane and 1 kubernetes worker node,after successful installation the cluster will have:
 
 - [Kubernetes v1.24](https://github.com/kubernetes/kubernetes)
 - [Kubernetes Autoscaler](https://github.com/kubernetes/autoscaler)
@@ -36,16 +36,16 @@ This will create 3 instance with 1 load balancer for kubernetes control plane an
 
 for HA needs odd number of master nodes (minimum 3) <https://etcd.io/docs/v3.4/faq/#why-an-odd-number-of-cluster-members>
 
-create simle configuration file `config.yaml` full configuration example [here](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/examples/config-full.yaml)
+create a simple configuration file `config.yaml` full configuration example [here](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/examples/config-full.yaml)
 
 ```yaml
 # kubeconfig path
 kubeConfigPath: ~/.kube/hcloud
 # Hetzner cloud internal network CIDR
 ipRange: "10.0.0.0/16"
-# servers for kuberntes master (recomended 3)
+# servers for kubernetes master (recommended 3)
 # for development purposes cluster can have 1 master node  
-# in this case cluster will be created without loadbalancer and pods can schedule on master
+# in this case cluster will be created without load balancer and pods can schedule on master
 masterCount: 3
 ```
 
