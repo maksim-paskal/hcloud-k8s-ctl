@@ -13,6 +13,7 @@ limitations under the License.
 package config_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/config"
@@ -35,5 +36,13 @@ func TestConfig(t *testing.T) {
 
 	if config.Get().MasterCount != 33 {
 		t.Fatal("MasterCount != 33")
+	}
+
+	if config.Get().HetznerToken.Main != "sometoken" {
+		t.Fatal("HetznerToken.Main != sometoken")
+	}
+
+	if strings.Contains(config.String(), "sometoken") {
+		t.Fatal("config has secret tokens")
 	}
 }
