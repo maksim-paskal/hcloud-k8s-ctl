@@ -25,3 +25,4 @@ kubectl -n kube-system delete pdb --all
 
 # remove taint from node if taint found
 kubectl taint nodes node-role.kubernetes.io/master- --all || true
+kubectl taint nodes node-role.kubernetes.io/control-plane- --all || true
