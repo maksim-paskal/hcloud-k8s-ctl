@@ -13,6 +13,7 @@ limitations under the License.
 package config
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"net"
@@ -275,11 +276,24 @@ func Get() *Type {
 	return &config
 }
 
+func hideSensitiveData(out []byte, sensitive string) []byte {
+	if len(sensitive) == 0 {
+		return out
+	}
+
+	return bytes.ReplaceAll(out, []byte(sensitive), []byte("<secret>"))
+}
+
 func String() string {
 	out, err := yaml.Marshal(config)
 	if err != nil {
 		return fmt.Sprintf("ERROR: %t", err)
 	}
+
+	// remove sensitive data
+	out = hideSensitiveData(out, config.HetznerToken.Main)
+	out = hideSensitiveData(out, config.HetznerToken.Ccm)
+	out = hideSensitiveData(out, config.HetznerToken.Csi)
 
 	return string(out)
 }
