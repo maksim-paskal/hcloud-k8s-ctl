@@ -22,7 +22,7 @@ for other OS download binnary from [release pages](https://github.com/maksim-pas
 
 ## Create kubernetes cluster
 
-This will create 3 instances with 1 load balancer for the kubernetes control plane and 1 kubernetes worker node,after successful installation the cluster will have:
+This will create kubernetes cluster in Hetzner Cloud Europe region with 3 instances, 1 load balancer for the kubernetes control plane and 1 kubernetes worker node, after successful installation the cluster will have:
 
 - [Kubernetes v1.24](https://github.com/kubernetes/kubernetes)
 - [Kubernetes Autoscaler](https://github.com/kubernetes/autoscaler)
@@ -47,6 +47,21 @@ ipRange: "10.0.0.0/16"
 # for development purposes cluster can have 1 master node  
 # in this case cluster will be created without load balancer and pods can schedule on master
 masterCount: 3
+```
+
+to create kubernetes cluster in Hetzner Cloud US region append to `config.yaml` next lines
+
+```yaml
+networkZone: us-east
+location: ash
+datacenter: ash-dc1
+masterServers:
+  servertype: cpx21
+autoscaler:
+  workers:
+  - location: ash
+    type:
+    - cpx51
 ```
 
 and start application
