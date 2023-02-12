@@ -30,8 +30,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var ctx = context.Background() //nolint:gochecknoglobals
-
 type ApplicationAPI struct {
 	hcloudClient      *hcloud.Client
 	masterClusterJoin string
@@ -39,14 +37,14 @@ type ApplicationAPI struct {
 	sshRootUser       string
 }
 
-func NewApplicationAPI() (*ApplicationAPI, error) {
+func NewApplicationAPI(ctx context.Context) (*ApplicationAPI, error) {
 	log.Info("Connecting to Hetzner Cloud API...")
 
 	api := ApplicationAPI{
 		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken.Main)),
 	}
 
-	if err := api.validateConfig(); err != nil {
+	if err := api.validateConfig(ctx); err != nil {
 		return &api, err
 	}
 
@@ -55,7 +53,7 @@ func NewApplicationAPI() (*ApplicationAPI, error) {
 	return &api, nil
 }
 
-func (api *ApplicationAPI) validateConfig() error {
+func (api *ApplicationAPI) validateConfig(ctx context.Context) error {
 	log.Info("Validating config...")
 
 	location, _, err := api.hcloudClient.Location.Get(ctx, config.Get().Location)
@@ -120,7 +118,7 @@ export MASTER_LB=` + loadBalancerIP + `
 `
 }
 
-func (api *ApplicationAPI) waitForLoadBalancer(loadBalancerName string) (string, error) {
+func (api *ApplicationAPI) waitForLoadBalancer(ctx context.Context, loadBalancerName string) (string, error) {
 	loadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(ctx, loadBalancerName)
 	if err != nil {
 		return "", errors.Wrap(err, "error in loadBalancer get")
@@ -142,7 +140,7 @@ func (api *ApplicationAPI) waitForLoadBalancer(loadBalancerName string) (string,
 	return string(loadBalancerIP), nil
 }
 
-func (api *ApplicationAPI) waitForServer(server string) (string, error) {
+func (api *ApplicationAPI) waitForServer(ctx context.Context, server string) (string, error) {
 	masterServer, _, err := api.hcloudClient.Server.Get(ctx, server)
 	if err != nil {
 		return "", errors.Wrap(err, "error in server get")
@@ -169,7 +167,7 @@ func (api *ApplicationAPI) waitForServer(server string) (string, error) {
 	return string(serverIP), nil
 }
 
-func (api *ApplicationAPI) joinToMasterNodes(server string) error {
+func (api *ApplicationAPI) joinToMasterNodes(ctx context.Context, server string) error {
 	log := log.WithField("server", server)
 
 	log.Infof("Join server to master nodes...")
@@ -178,6 +176,10 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 	retryCount := 0
 
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		if retryCount > config.Get().MasterServers.RetryTimeLimit {
 			return errRetryLimitReached
 		}
@@ -189,7 +191,7 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 
 		log.Infof("Waiting for server... try=%d", retryCount)
 
-		serverIP, err := api.waitForServer(server)
+		serverIP, err := api.waitForServer(ctx, server)
 		if err != nil {
 			log.WithError(err).Error()
 
@@ -214,7 +216,7 @@ func (api *ApplicationAPI) joinToMasterNodes(server string) error {
 	return nil
 }
 
-func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
+func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool) error { //nolint:cyclop
 	log.Info("Executing postInstall...")
 
 	serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, 1)
@@ -222,6 +224,10 @@ func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 	retryCount := 0
 
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		if retryCount > config.Get().MasterServers.RetryTimeLimit {
 			return errRetryLimitReached
 		}
@@ -233,7 +239,7 @@ func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 
 		log.Infof("Waiting for master node... try=%d", retryCount)
 
-		serverIP, err := api.waitForServer(serverName)
+		serverIP, err := api.waitForServer(ctx, serverName)
 		if err != nil {
 			log.WithError(err).Error()
 
@@ -272,7 +278,7 @@ func (api *ApplicationAPI) postInstall(copyNewScripts bool) error {
 	return nil
 }
 
-func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
+func (api *ApplicationAPI) initFirstMasterNode(ctx context.Context) error { //nolint:funlen
 	log.Info("Init first master node...")
 
 	// hetzner cloud default user is root
@@ -283,6 +289,10 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 	retryCount := 0
 
 	for {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+
 		if retryCount > config.Get().MasterServers.RetryTimeLimit {
 			return errRetryLimitReached
 		}
@@ -294,7 +304,7 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 
 		log.Infof("Waiting for master node... try=%d", retryCount)
 
-		serverIP, err := api.waitForServer(serverName)
+		serverIP, err := api.waitForServer(ctx, serverName)
 		if err != nil {
 			log.WithError(err).Debug()
 
@@ -303,7 +313,7 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 
 		log.Info("Waiting for loadBalancer...")
 
-		loadBalancerIP, err := api.waitForLoadBalancer(config.Get().ClusterName)
+		loadBalancerIP, err := api.waitForLoadBalancer(ctx, config.Get().ClusterName)
 		if err != nil {
 			log.WithError(err).Error()
 
@@ -348,7 +358,7 @@ func (api *ApplicationAPI) initFirstMasterNode() error { //nolint:funlen
 	return nil
 }
 
-func (api *ApplicationAPI) createLoadBalancer() error {
+func (api *ApplicationAPI) createLoadBalancer(ctx context.Context) error {
 	log.Info("Creating loadbalancer...")
 
 	k8sLoadBalancerType, _, err := api.hcloudClient.LoadBalancerType.Get(
@@ -404,7 +414,7 @@ func (api *ApplicationAPI) createLoadBalancer() error {
 	return nil
 }
 
-func (api *ApplicationAPI) attachToBalancer(server hcloud.ServerCreateResult, balancer *hcloud.LoadBalancer) error {
+func (api *ApplicationAPI) attachToBalancer(ctx context.Context, server hcloud.ServerCreateResult, balancer *hcloud.LoadBalancer) error { //nolint:lll
 	usePrivateIP := true
 	k8sTargetServer := hcloud.LoadBalancerAddServerTargetOpts{
 		Server:       server.Server,
@@ -419,7 +429,7 @@ func (api *ApplicationAPI) attachToBalancer(server hcloud.ServerCreateResult, ba
 	return nil
 }
 
-func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
+func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:funlen,cyclop
 	log.Info("Creating servers...")
 
 	serverType, _, err := api.hcloudClient.ServerType.Get(ctx, config.Get().MasterServers.ServerType)
@@ -495,11 +505,15 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 		retryCount := 0
 
 		for {
+			if ctx.Err() != nil {
+				return ctx.Err()
+			}
+
 			if retryCount > config.Get().MasterServers.RetryTimeLimit {
 				return errRetryLimitReached
 			}
 
-			err = api.attachToBalancer(serverResults, k8sLoadBalancer)
+			err = api.attachToBalancer(ctx, serverResults, k8sLoadBalancer)
 			if err != nil {
 				log.WithError(err).Debug()
 				time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
@@ -514,7 +528,7 @@ func (api *ApplicationAPI) createServer() error { //nolint:funlen,cyclop
 	return nil
 }
 
-func (api *ApplicationAPI) createSSHKey() error {
+func (api *ApplicationAPI) createSSHKey(ctx context.Context) error {
 	log.Info("Creating sshKey...")
 
 	publicKey, err := os.ReadFile(config.Get().SSHPublicKey)
@@ -533,7 +547,7 @@ func (api *ApplicationAPI) createSSHKey() error {
 	return nil
 }
 
-func (api *ApplicationAPI) createNetwork() error {
+func (api *ApplicationAPI) createNetwork(ctx context.Context) error {
 	log.Info("Creating network...")
 
 	_, IPRangeNet, err := net.ParseCIDR(config.Get().IPRange)
@@ -570,35 +584,35 @@ func (api *ApplicationAPI) createNetwork() error {
 	return nil
 }
 
-func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
+func (api *ApplicationAPI) NewCluster(ctx context.Context) error { //nolint:cyclop
 	log.Info("Creating cluster...")
 
-	err := api.createNetwork()
+	err := api.createNetwork(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error in create network")
 	}
 
-	err = api.CreateFirewall(true, true)
+	err = api.CreateFirewall(ctx, true, true)
 	if err != nil {
 		return errors.Wrap(err, "error in create firewall")
 	}
 
-	err = api.createSSHKey()
+	err = api.createSSHKey(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error in create sshkey")
 	}
 
-	err = api.createLoadBalancer()
+	err = api.createLoadBalancer(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error in create loadbalancer")
 	}
 
-	err = api.createServer()
+	err = api.createServer(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error in create server")
 	}
 
-	err = api.initFirstMasterNode()
+	err = api.initFirstMasterNode(ctx)
 	if err != nil {
 		return errors.Wrap(err, "error in init first master nodes")
 	}
@@ -613,13 +627,13 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 
 		log := log.WithField("server", serverName)
 
-		err = api.joinToMasterNodes(serverName)
+		err = api.joinToMasterNodes(ctx, serverName)
 		if err != nil {
 			log.WithError(err).Error(err, "error in join")
 		}
 	}
 
-	err = api.postInstall(false)
+	err = api.postInstall(ctx, false)
 	if err != nil {
 		return errors.Wrap(err, "error in postInstall")
 	}
@@ -629,7 +643,7 @@ func (api *ApplicationAPI) NewCluster() error { //nolint:cyclop
 	return nil
 }
 
-func (api *ApplicationAPI) DeleteCluster() { //nolint: cyclop,funlen
+func (api *ApplicationAPI) DeleteCluster(ctx context.Context) { //nolint: cyclop,funlen
 	log.Info("Deleting cluster...")
 
 	k8sNetwork, _, _ := api.hcloudClient.Network.Get(ctx, config.Get().ClusterName)
@@ -754,7 +768,7 @@ func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string
 	return stdout.String(), stderr.String(), nil
 }
 
-func (api *ApplicationAPI) ListConfigurations() {
+func (api *ApplicationAPI) ListConfigurations(ctx context.Context) {
 	type DatacentersType struct {
 		Location string
 		Name     string
@@ -819,15 +833,15 @@ func (api *ApplicationAPI) getDeploymentValues() string {
 	return base64.StdEncoding.EncodeToString(resultYAML)
 }
 
-func (api *ApplicationAPI) PatchClusterDeployment() {
-	if err := api.postInstall(true); err != nil {
+func (api *ApplicationAPI) PatchClusterDeployment(ctx context.Context) {
+	if err := api.postInstall(ctx, true); err != nil {
 		log.Fatal(err)
 	}
 
 	log.Info("Cluster pached!")
 }
 
-func (api *ApplicationAPI) ExecuteAdHoc(user string, command string, runOnMasters bool, runOnWorkers bool, copyNewScripts bool) { //nolint:funlen,lll,cyclop
+func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, command string, runOnMasters bool, runOnWorkers bool, copyNewScripts bool) { //nolint:funlen,lll,cyclop
 	log.Info("Executing adhoc...")
 
 	if len(user) > 0 {
@@ -951,7 +965,7 @@ func (api *ApplicationAPI) downloadNewScripts(serverName string, serverIP string
 	return nil
 }
 
-func (api *ApplicationAPI) UpgradeControlPlane(version string) {
+func (api *ApplicationAPI) UpgradeControlPlane(ctx context.Context, version string) {
 	log.Info("Executing controlplane upgrade...")
 
 	for i := 1; i <= config.Get().MasterCount; i++ {
@@ -959,7 +973,7 @@ func (api *ApplicationAPI) UpgradeControlPlane(version string) {
 
 		log := log.WithField("master", serverName)
 
-		serverIP, err := api.waitForServer(serverName)
+		serverIP, err := api.waitForServer(ctx, serverName)
 		if err != nil {
 			log.WithError(err).Fatal()
 		}
@@ -988,7 +1002,7 @@ func (api *ApplicationAPI) UpgradeControlPlane(version string) {
 	log.Info("Cluster upgraded!")
 }
 
-func (api *ApplicationAPI) CreateFirewall(createControlPlane, createWorker bool) error { //nolint:funlen
+func (api *ApplicationAPI) CreateFirewall(ctx context.Context, createControlPlane, createWorker bool) error { //nolint:funlen,lll
 	log.Info("Creating firewall...")
 
 	if !createControlPlane && !createWorker {
