@@ -13,10 +13,14 @@ limitations under the License.
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/api"
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/config"
@@ -36,6 +40,8 @@ func main() { //nolint:cyclop,funlen
 		fmt.Println(gitVersion) //nolint:forbidigo
 		os.Exit(0)
 	}
+
+	ctx := getInterruptionContext()
 
 	log.Infof("Starting %s...", gitVersion)
 
@@ -58,29 +64,30 @@ func main() { //nolint:cyclop,funlen
 		log.WithError(err).Fatal("error checking config")
 	}
 
-	applicationAPI, err := api.NewApplicationAPI()
+	applicationAPI, err := api.NewApplicationAPI(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	switch strings.ToLower(*config.Get().CliArgs.Action) {
 	case "create":
-		err = applicationAPI.NewCluster()
+		err = applicationAPI.NewCluster(ctx)
 		if err != nil {
 			log.WithError(err).Fatal()
 		}
 	case "delete":
-		applicationAPI.DeleteCluster()
+		applicationAPI.DeleteCluster(ctx)
 	case "list-configurations":
-		applicationAPI.ListConfigurations()
+		applicationAPI.ListConfigurations(ctx)
 	case "patch-cluster":
-		applicationAPI.PatchClusterDeployment()
+		applicationAPI.PatchClusterDeployment(ctx)
 	case "adhoc":
 		if len(*config.Get().CliArgs.AdhocCommand) == 0 {
 			log.Fatal("add -adhoc.command argument")
 		}
 
 		applicationAPI.ExecuteAdHoc(
+			ctx,
 			*config.Get().CliArgs.AdhocUser,
 			*config.Get().CliArgs.AdhocCommand,
 			*config.Get().CliArgs.AdhocMasters,
@@ -89,10 +96,12 @@ func main() { //nolint:cyclop,funlen
 		)
 	case "upgrade-controlplane":
 		applicationAPI.UpgradeControlPlane(
+			ctx,
 			*config.Get().CliArgs.UpgradeControlPlaneVersion,
 		)
 	case "create-firewall":
 		err = applicationAPI.CreateFirewall(
+			ctx,
 			*config.Get().CliArgs.CreateFirewallControlPlane,
 			*config.Get().CliArgs.CreateFirewallWorkers,
 		)
@@ -102,4 +111,23 @@ func main() { //nolint:cyclop,funlen
 	default:
 		log.Fatal("unknown action")
 	}
+}
+
+func getInterruptionContext() context.Context {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+
+	go func() {
+		<-c
+		cancel()
+
+		// wait 5s for graceful shutdown
+		time.Sleep(5 * time.Second) //nolint:gomnd
+
+		os.Exit(1)
+	}()
+
+	return ctx
 }
