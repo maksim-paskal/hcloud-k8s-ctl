@@ -86,8 +86,8 @@ mkdir -p /etc/apt/keyrings
 
 rm -rf /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/kubernetes-archive-keyring.gpg
 
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
+cat /root/scripts/apt-keys/docker.gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+cat /root/scripts/apt-keys/kubernetes.gpg | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
 
 cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
 deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
