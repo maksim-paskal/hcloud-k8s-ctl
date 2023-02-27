@@ -37,6 +37,10 @@ apply-yaml:
 	kubectl apply -f ./scripts
 apply-test:
 	helm upgrade --install test ./examples/charts/test
+download-apt-keys:
+	mkdir -p ./scripts/apt-keys
+	curl -sSL -o ./scripts/apt-keys/kubernetes.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+	curl -sSL -o ./scripts/apt-keys/docker.gpg https://download.docker.com/linux/ubuntu/gpg
 delete-tests:
 	helm delete test || true
 test-kubernetes-yaml:
