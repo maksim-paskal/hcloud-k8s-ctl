@@ -94,7 +94,7 @@ func (api *ApplicationAPI) saveKubeconfig() error {
 		kubeconfigFileMode,
 	)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "error creating file")
 	}
 
 	return nil
@@ -184,7 +184,7 @@ func (api *ApplicationAPI) joinToMasterNodes(ctx context.Context, server string)
 
 	for {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return errors.Wrap(ctx.Err(), "context error")
 		}
 
 		if retryCount > config.Get().MasterServers.RetryTimeLimit {
@@ -232,7 +232,7 @@ func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool)
 
 	for {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return errors.Wrap(ctx.Err(), "context error")
 		}
 
 		if retryCount > config.Get().MasterServers.RetryTimeLimit {
@@ -297,7 +297,7 @@ func (api *ApplicationAPI) initFirstMasterNode(ctx context.Context) error { //no
 
 	for {
 		if ctx.Err() != nil {
-			return ctx.Err()
+			return errors.Wrap(ctx.Err(), "context error")
 		}
 
 		if retryCount > config.Get().MasterServers.RetryTimeLimit {
@@ -373,17 +373,17 @@ func (api *ApplicationAPI) createLoadBalancer(ctx context.Context) error {
 		config.Get().MasterLoadBalancer.LoadBalancerType,
 	)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not get loadbalancer type")
 	}
 
 	k8sLocation, _, err := api.hcloudClient.Location.Get(ctx, config.Get().Location)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not get location")
 	}
 
 	k8sNetwork, _, err := api.hcloudClient.Network.Get(ctx, config.Get().ClusterName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not get network")
 	}
 
 	ListenPort := config.Get().MasterLoadBalancer.ListenPort
@@ -415,7 +415,7 @@ func (api *ApplicationAPI) createLoadBalancer(ctx context.Context) error {
 		Services:         []hcloud.LoadBalancerCreateOptsService{k8sService},
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not create loadbalancer")
 	}
 
 	return nil
@@ -430,7 +430,7 @@ func (api *ApplicationAPI) attachToBalancer(ctx context.Context, server hcloud.S
 
 	_, _, err := api.hcloudClient.LoadBalancer.AddServerTarget(ctx, balancer, k8sTargetServer)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "could not attach server to loadbalancer")
 	}
 
 	return nil
@@ -441,7 +441,11 @@ func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:fu
 
 	serverType, _, err := api.hcloudClient.ServerType.Get(ctx, config.Get().MasterServers.ServerType)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get server type")
+	}
+
+	if serverType == nil {
+		return errors.Errorf("server type %s not found", config.Get().MasterServers.ServerType)
 	}
 
 	serverImage, _, err := api.hcloudClient.Image.GetForArchitecture(
@@ -450,29 +454,29 @@ func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:fu
 		config.Get().ServerComponents.Ubuntu.Architecture,
 	)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get server image")
 	}
 
 	k8sNetwork, _, err := api.hcloudClient.Network.Get(ctx, config.Get().ClusterName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get network")
 	}
 
 	k8sSSHKey, _, err := api.hcloudClient.SSHKey.Get(ctx, config.Get().ClusterName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get ssh key")
 	}
 
 	k8sDatacenter, _, err := api.hcloudClient.Datacenter.Get(ctx, config.Get().Datacenter)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get datacenter")
 	}
 
 	startAfterCreate := true
 
 	k8sLoadBalancer, _, err := api.hcloudClient.LoadBalancer.Get(ctx, config.Get().ClusterName)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to get loadbalancer")
 	}
 
 	var placementGroupResults hcloud.PlacementGroupCreateResult
@@ -482,7 +486,7 @@ func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:fu
 		Type: hcloud.PlacementGroupTypeSpread,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create placement group")
 	}
 
 	for i := 1; i <= config.Get().MasterCount; i++ {
@@ -510,14 +514,14 @@ func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:fu
 
 		serverResults, _, err := api.hcloudClient.Server.Create(ctx, prop)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "failed to create server")
 		}
 
 		retryCount := 0
 
 		for {
 			if ctx.Err() != nil {
-				return ctx.Err()
+				return errors.Wrap(ctx.Err(), "context error")
 			}
 
 			if retryCount > config.Get().MasterServers.RetryTimeLimit {
@@ -544,7 +548,7 @@ func (api *ApplicationAPI) createSSHKey(ctx context.Context) error {
 
 	publicKey, err := os.ReadFile(config.Get().SSHPublicKey)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read ssh public key")
 	}
 
 	_, _, err = api.hcloudClient.SSHKey.Create(ctx, hcloud.SSHKeyCreateOpts{
@@ -552,7 +556,7 @@ func (api *ApplicationAPI) createSSHKey(ctx context.Context) error {
 		PublicKey: string(publicKey),
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create ssh key")
 	}
 
 	return nil
@@ -563,12 +567,12 @@ func (api *ApplicationAPI) createNetwork(ctx context.Context) error {
 
 	_, IPRangeNet, err := net.ParseCIDR(config.Get().IPRange)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse ip range")
 	}
 
 	_, IPRangeSubnetNet, err := net.ParseCIDR(config.Get().IPRangeSubnet)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse ip range subnet")
 	}
 
 	k8sNetwork, _, err := api.hcloudClient.Network.Create(ctx, hcloud.NetworkCreateOpts{
@@ -576,7 +580,7 @@ func (api *ApplicationAPI) createNetwork(ctx context.Context) error {
 		IPRange: IPRangeNet,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to create network")
 	}
 
 	k8sNetworkSubnet := hcloud.NetworkSubnet{
@@ -589,7 +593,7 @@ func (api *ApplicationAPI) createNetwork(ctx context.Context) error {
 		Subnet: k8sNetworkSubnet,
 	})
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to add subnet to network")
 	}
 
 	return nil
@@ -733,12 +737,12 @@ func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string
 
 	privateKey, err := os.ReadFile(config.Get().SSHPrivateKey)
 	if err != nil {
-		return "", "", err
+		return "", "", errors.Wrap(err, "error in read private key")
 	}
 
 	key, err := ssh.ParsePrivateKey(privateKey)
 	if err != nil {
-		return "", "", err
+		return "", "", errors.Wrap(err, "error parsing private key")
 	}
 
 	config := &ssh.ClientConfig{
@@ -751,12 +755,12 @@ func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string
 
 	client, err := ssh.Dial("tcp", net.JoinHostPort(ipAddress, "22"), config)
 	if err != nil {
-		return "", "", err
+		return "", "", errors.Wrap(err, "error connecting to ssh")
 	}
 
 	session, err := client.NewSession()
 	if err != nil {
-		return "", "", err
+		return "", "", errors.Wrap(err, "error creating session")
 	}
 
 	defer session.Close()

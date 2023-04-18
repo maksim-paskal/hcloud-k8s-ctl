@@ -9,6 +9,5 @@ linters:
   disable:
   - exhaustivestruct
   - exhaustruct
-  - wrapcheck
   - varnamelen
   - musttag
