@@ -15,11 +15,10 @@
 # limitations under the License.
 set -ex
 
-: "${KUBERNETES_VERSION:=1.24.9}"
-
-export DOCKER_VERSION=5:20.10.17~3-0~ubuntu-focal
-export CONTAINERD_VERSION=1.6.6-1
-export PAUSE_CONTAINER=k8s.gcr.io/pause:3.2
+export KUBERNETES_VERSION="{{ .Values.serverComponents.kubernetes.version }}"
+export DOCKER_VERSION="{{ .Values.serverComponents.docker.version }}"
+export CONTAINERD_VERSION="{{ .Values.serverComponents.containerd.version }}"
+export PAUSE_CONTAINER="{{ .Values.serverComponents.containerd.pausecontainer }}"
 
 # https://containerd.io/releases/#kubernetes-support
 # to select all available versions, run
@@ -41,7 +40,7 @@ nfs-common \
 linux-headers-generic
 
 # create new user to ssh into server
-hcloud_user=hcloud-user
+hcloud_user="{{ .Values.serverComponents.ubuntu.username }}"
 if ! id -u "$hcloud_user" > /dev/null 2>&1; then
   groupadd --gid 1000 $hcloud_user
   useradd -rm -d /home/$hcloud_user -s /bin/bash -g 1000 -u 1000 $hcloud_user
@@ -51,8 +50,9 @@ if ! id -u "$hcloud_user" > /dev/null 2>&1; then
   echo "$hcloud_user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 fi
 
-cat > /etc/ssh/sshd_config <<EOF
-AllowUsers hcloud-user
+# remove root ssh access
+cat <<EOF | tee /etc/ssh/sshd_config 
+AllowUsers $hcloud_user
 
 PermitRootLogin no
 PasswordAuthentication no

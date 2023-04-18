@@ -155,7 +155,7 @@ spec:
             topologyKey: kubernetes.io/hostname
       containers:
       - name: cluster-autoscaler
-        image: paskalmaksim/cluster-autoscaler-amd64:fc3aefc3d
+        image: {{ .Values.autoscaler.image | quote }}
         imagePullPolicy: IfNotPresent
         resources:
           requests:
@@ -171,7 +171,7 @@ spec:
         {{- end }}
         env:
         - name: HCLOUD_IMAGE
-          value: "ubuntu-20.04"
+          value: {{ .Values.serverComponents.ubuntu.version }}
         - name: HCLOUD_TOKEN
           valueFrom:
             secretKeyRef:
@@ -183,9 +183,9 @@ spec:
               name: hcloud-init
               key: bootstrap
         - name: HCLOUD_SSH_KEY
-          value: "k8s"
+          value: {{ .Values.clusterName }}
         - name: HCLOUD_NETWORK
-          value: "k8s"
+          value: {{ .Values.clusterName }}
         volumeMounts:
         - name: ssl-certs
           mountPath: /etc/ssl/certs/ca-certificates.crt
