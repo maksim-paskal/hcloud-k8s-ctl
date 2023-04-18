@@ -24,6 +24,7 @@ import (
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -256,7 +257,7 @@ func defaultConfig() Type { //nolint:funlen
 func Load() error { //nolint: cyclop
 	configByte, err := os.ReadFile(*cliArguments.ConfigPath)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to read config file")
 	}
 
 	config = defaultConfig()
@@ -276,32 +277,32 @@ func Load() error { //nolint: cyclop
 
 	err = yaml.Unmarshal(configByte, &config)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to unmarshal config file")
 	}
 
 	config.KubeConfigPath, err = expand(config.KubeConfigPath)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to expand kube config path")
 	}
 
 	config.SSHPrivateKey, err = expand(config.SSHPrivateKey)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to expand ssh private key path")
 	}
 
 	config.SSHPublicKey, err = expand(config.SSHPublicKey)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to expand ssh public key path")
 	}
 
 	_, _, err = net.ParseCIDR(config.IPRange)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse ip range")
 	}
 
 	_, _, err = net.ParseCIDR(config.IPRangeSubnet)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to parse ip range subnet")
 	}
 
 	return nil
@@ -348,7 +349,7 @@ func expand(path string) (string, error) {
 
 	usr, err := user.Current()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to get current user")
 	}
 
 	return filepath.Join(usr.HomeDir, path[1:]), nil
@@ -365,10 +366,15 @@ func envDefault(name string, defaultValue string) string {
 func SaveConfig(filePath string) error {
 	configByte, err := yaml.Marshal(config)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "failed to marshal config")
 	}
 
 	const configPermissions = 0o600
 
-	return os.WriteFile(filePath, hideSensitiveData(configByte, config.HetznerToken.Main), configPermissions)
+	err = os.WriteFile(filePath, hideSensitiveData(configByte, config.HetznerToken.Main), configPermissions)
+	if err != nil {
+		return errors.Wrap(err, "failed to write config file")
+	}
+
+	return nil
 }
