@@ -36,6 +36,7 @@ type masterServersInitParams struct {
 type cliArgs struct {
 	LogLevel                   *string
 	ConfigPath                 *string
+	SaveConfigPath             *string
 	Action                     *string
 	AdhocCommand               *string
 	AdhocCopyNewFile           *bool
@@ -51,7 +52,6 @@ type masterServers struct {
 	NamePattern        string
 	PlacementGroupName string
 	ServerType         string
-	Image              string
 	Labels             map[string]string
 	WaitTimeInRetry    time.Duration
 	RetryTimeLimit     int
@@ -71,6 +71,7 @@ type autoscalerDefaults struct {
 }
 type autoscaler struct {
 	Enabled  bool
+	Image    string
 	Args     []string
 	Defaults autoscalerDefaults
 	Workers  []autoscalerWorker
@@ -90,6 +91,29 @@ type masterLoadBalancer struct {
 	DestinationPort  int
 }
 
+type serverComponentContainerd struct {
+	Version        string
+	PauseContainer string
+}
+
+type serverComponentDocker struct {
+	Version string
+}
+type serverComponentKubernetes struct {
+	Version string
+}
+type serverComponentUbuntu struct {
+	Version      string
+	UserName     string
+	Architecture hcloud.Architecture
+}
+type serverComponents struct {
+	Ubuntu     serverComponentUbuntu
+	Kubernetes serverComponentKubernetes
+	Docker     serverComponentDocker
+	Containerd serverComponentContainerd
+}
+
 //nolint:gochecknoglobals
 var config = Type{}
 
@@ -97,6 +121,7 @@ type Type struct {
 	ClusterName        string             `yaml:"clusterName"`
 	KubeConfigPath     string             `yaml:"kubeConfigPath"`
 	HetznerToken       hetznerToken       `yaml:"hetznerToken"`
+	ServerComponents   serverComponents   `yaml:"serverComponents"`
 	IPRange            string             `yaml:"ipRange"`
 	IPRangeSubnet      string             `yaml:"ipRangeSubnet"`
 	SSHPrivateKey      string             `yaml:"sshPrivateKey"`
@@ -117,6 +142,7 @@ type Type struct {
 //nolint:gochecknoglobals
 var cliArguments = cliArgs{
 	LogLevel:                   flag.String("log.level", "INFO", "logging level"),
+	SaveConfigPath:             flag.String("save-config-path", "", "save full config path"),
 	ConfigPath:                 flag.String("config", envDefault("CONFIG", "config.yaml"), "config path"),
 	Action:                     flag.String("action", "", "create|delete|list-configurations|patch-cluster|adhoc|upgrade-controlplane|create-firewall"), //nolint:lll
 	AdhocCommand:               flag.String("adhoc.command", "", "command to adhoc action"),
@@ -140,6 +166,23 @@ func defaultConfig() Type { //nolint:funlen
 		HetznerToken: hetznerToken{
 			Main: os.Getenv("HCLOUD_TOKEN"),
 		},
+		ServerComponents: serverComponents{
+			Ubuntu: serverComponentUbuntu{
+				Version:      "ubuntu-20.04",
+				UserName:     "hcloud-user",
+				Architecture: hcloud.ArchitectureX86, // x86 or arm
+			},
+			Kubernetes: serverComponentKubernetes{
+				Version: "1.24.9",
+			},
+			Docker: serverComponentDocker{
+				Version: "5:20.10.17~3-0~ubuntu-focal",
+			},
+			Containerd: serverComponentContainerd{
+				Version:        "1.6.6-1",
+				PauseContainer: "k8s.gcr.io/pause:3.2",
+			},
+		},
 		ClusterName:    "k8s",
 		IPRange:        "10.0.0.0/16",
 		IPRangeSubnet:  "",
@@ -155,7 +198,6 @@ func defaultConfig() Type { //nolint:funlen
 			NamePattern:        "master-%d",
 			PlacementGroupName: "master-placement-group",
 			ServerType:         "cx21",
-			Image:              "ubuntu-20.04",
 			Labels:             serverLabels,
 			WaitTimeInRetry:    waitTimeInRetry,
 			RetryTimeLimit:     retryTimeLimit,
@@ -172,6 +214,7 @@ func defaultConfig() Type { //nolint:funlen
 		Deployments: emptyStruct{},
 		Autoscaler: autoscaler{
 			Enabled: true,
+			Image:   "docker.io/paskalmaksim/cluster-autoscaler-amd64:fc3aefc3d",
 			Args: []string{
 				"--v=4",
 				"--cloud-provider=hetzner",
@@ -317,4 +360,15 @@ func envDefault(name string, defaultValue string) string {
 	}
 
 	return defaultValue
+}
+
+func SaveConfig(filePath string) error {
+	configByte, err := yaml.Marshal(config)
+	if err != nil {
+		return err
+	}
+
+	const configPermissions = 0o600
+
+	return os.WriteFile(filePath, hideSensitiveData(configByte, config.HetznerToken.Main), configPermissions)
 }

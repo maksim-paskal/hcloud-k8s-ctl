@@ -1,9 +1,21 @@
 clusterName: k8s
 kubeConfigPath: /Users/mpascal/.kube/hcloud
 hetznerToken:
-    main: vIdRTyo2K8i5Rsn87Dh2aLH3xjJW15T6y9Pi1zXbkjPoz4BhGyl5aiP37w8PFQZw
+    main: <secret>
     csi: ""
     ccm: ""
+serverComponents:
+    ubuntu:
+        version: ubuntu-20.04
+        username: hcloud-user
+        architecture: x86
+    kubernetes:
+        version: 1.24.9
+    docker:
+        version: 5:20.10.17~3-0~ubuntu-focal
+    containerd:
+        version: 1.6.6-1
+        pausecontainer: k8s.gcr.io/pause:3.2
 ipRange: 10.0.0.0/16
 ipRangeSubnet: 10.0.0.0/16
 sshPrivateKey: /Users/mpascal/.ssh/id_rsa
@@ -16,7 +28,6 @@ masterServers:
     namepattern: master-%d
     placementgroupname: master-placement-group
     servertype: cx21
-    image: ubuntu-20.04
     labels:
         role: master
     waittimeinretry: 3s
@@ -31,7 +42,8 @@ masterLoadBalancer:
 cliArgs:
     loglevel: DEBUG
     configpath: config.yaml
-    action: delete
+    saveconfigpath: ./examples/config-full.yaml
+    action: save-full-config
     adhoccommand: ""
     adhoccopynewfile: false
     adhocmasters: false
@@ -43,6 +55,7 @@ cliArgs:
 deployments: {}
 autoscaler:
     enabled: true
+    image: docker.io/paskalmaksim/cluster-autoscaler-amd64:fc3aefc3d
     args:
         - --v=4
         - --cloud-provider=hetzner

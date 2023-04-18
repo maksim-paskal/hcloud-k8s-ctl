@@ -1,6 +1,7 @@
 KUBECONFIG=$(HOME)/.kube/hcloud
 action=list-configurations
 config=config.yaml
+fullConfig=./examples/config-full.yaml
 args=""
 
 test:
@@ -25,6 +26,8 @@ upgrade-controlplane:
 	make run action=upgrade-controlplane
 create-firewall:
 	make run action=create-firewall
+save-full-config:
+	make run action=save-full-config args=-save-config-path=$(fullConfig)
 upgrade-workers: # restart all pods on worker node
 	make run action=adhoc args="-adhoc.copynewfile -adhoc.command=/root/scripts/upgrade-worker.sh"
 upgrade-workers-kernel: # upgrade kernel and restart worker node
@@ -40,10 +43,12 @@ apply-test:
 delete-tests:
 	helm delete test || true
 test-kubernetes-yaml:
-	helm lint ./scripts/chart
-	helm lint ./examples/charts/test
-	helm template ./scripts/chart | kubectl apply --dry-run=client --validate=true -f -
-	helm template ./examples/charts/test | kubectl apply --dry-run=client --validate=true -f -
+	make save-full-config
+	helm dep up ./scripts/chart
+	helm lint ./scripts/chart --values=$(fullConfig)
+	helm lint ./examples/charts/test --values=$(fullConfig)
+	helm template ./scripts/chart --values=$(fullConfig) | kubectl apply --dry-run=client --validate=true -f -
+	helm template ./examples/charts/test --values=$(fullConfig) | kubectl apply --dry-run=client --validate=true -f -
 download-yamls:
 	curl -sSL -o ./scripts/chart/templates/kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 	curl -sSL -o ./scripts/chart/templates/metrics-server.yml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml

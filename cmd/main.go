@@ -95,16 +95,18 @@ func main() { //nolint:cyclop,funlen
 			*config.Get().CliArgs.AdhocCopyNewFile,
 		)
 	case "upgrade-controlplane":
-		applicationAPI.UpgradeControlPlane(
-			ctx,
-			*config.Get().CliArgs.UpgradeControlPlaneVersion,
-		)
+		applicationAPI.UpgradeControlPlane(ctx)
 	case "create-firewall":
 		err = applicationAPI.CreateFirewall(
 			ctx,
 			*config.Get().CliArgs.CreateFirewallControlPlane,
 			*config.Get().CliArgs.CreateFirewallWorkers,
 		)
+		if err != nil {
+			log.Fatal(err)
+		}
+	case "save-full-config":
+		err = config.SaveConfig(*config.Get().CliArgs.SaveConfigPath)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -30,6 +30,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const (
+	nodeGroupSelector = "hcloud/node-group"
+	debugStdout       = "stdout=%s"
+	debugStderr       = "stderr=%s"
+	executingCommand  = "Executing command..."
+)
+
 type ApplicationAPI struct {
 	hcloudClient      *hcloud.Client
 	masterClusterJoin string
@@ -48,7 +55,7 @@ func NewApplicationAPI(ctx context.Context) (*ApplicationAPI, error) {
 		return &api, err
 	}
 
-	api.sshRootUser = "hcloud-user"
+	api.sshRootUser = config.Get().ServerComponents.Ubuntu.UserName
 
 	return &api, nil
 }
@@ -198,7 +205,7 @@ func (api *ApplicationAPI) joinToMasterNodes(ctx context.Context, server string)
 			continue
 		}
 
-		log.Info("Executing command...")
+		log.Info(executingCommand)
 
 		stdout, stderr, err := api.execCommand(serverIP, api.masterClusterJoin)
 		if err != nil {
@@ -207,8 +214,8 @@ func (api *ApplicationAPI) joinToMasterNodes(ctx context.Context, server string)
 			continue
 		}
 
-		log.Debugf("stdout=%s", stdout)
-		log.Debugf("stderr=%s", stderr)
+		log.Debugf(debugStdout, stdout)
+		log.Debugf(debugStderr, stderr)
 
 		break
 	}
@@ -252,15 +259,15 @@ func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool)
 			}
 		}
 
-		log.Info("Executing command...")
+		log.Info(executingCommand)
 
 		stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/post-install.sh")
 		if err != nil {
 			log.WithError(err).Fatal(stderr)
 		}
 
-		log.Debugf("stdout=%s", stdout)
-		log.Debugf("stderr=%s", stderr)
+		log.Debugf(debugStdout, stdout)
+		log.Debugf(debugStderr, stderr)
 
 		if config.Get().MasterCount == 1 {
 			stdout, stderr, err := api.execCommand(serverIP, "/root/scripts/one-master-mode.sh")
@@ -268,8 +275,8 @@ func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool)
 				log.WithError(err).Fatal(stderr)
 			}
 
-			log.Debugf("stdout=%s", stdout)
-			log.Debugf("stderr=%s", stderr)
+			log.Debugf(debugStdout, stdout)
+			log.Debugf(debugStderr, stderr)
 		}
 
 		break
@@ -320,7 +327,7 @@ func (api *ApplicationAPI) initFirstMasterNode(ctx context.Context) error { //no
 			continue
 		}
 
-		log.Info("Executing command...")
+		log.Info(executingCommand)
 
 		stdout, stderr, err := api.execCommand(serverIP, api.getInitMasterCommand(loadBalancerIP))
 		if err != nil {
@@ -329,12 +336,12 @@ func (api *ApplicationAPI) initFirstMasterNode(ctx context.Context) error { //no
 			continue
 		}
 
-		log.Debugf("stdout=%s", stdout)
-		log.Debugf("stderr=%s", stderr)
+		log.Debugf(debugStdout, stdout)
+		log.Debugf(debugStderr, stderr)
 
 		log.Info("Get join command...")
 
-		api.sshRootUser = "hcloud-user"
+		api.sshRootUser = config.Get().ServerComponents.Ubuntu.UserName
 
 		stdout, stderr, err = api.execCommand(serverIP, "cat /root/scripts/join-master.sh")
 		if err != nil {
@@ -437,7 +444,11 @@ func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:fu
 		return err
 	}
 
-	serverImage, _, err := api.hcloudClient.Image.Get(ctx, config.Get().MasterServers.Image)
+	serverImage, _, err := api.hcloudClient.Image.GetForArchitecture(
+		ctx,
+		config.Get().ServerComponents.Ubuntu.Version,
+		config.Get().ServerComponents.Ubuntu.Architecture,
+	)
 	if err != nil {
 		return err
 	}
@@ -680,14 +691,14 @@ func (api *ApplicationAPI) DeleteCluster(ctx context.Context) { //nolint: cyclop
 	// get worker nodes
 	nodeServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
 		ListOpts: hcloud.ListOpts{
-			LabelSelector: "hcloud/node-group",
+			LabelSelector: nodeGroupSelector,
 		},
 	})
 
 	allServers = append(allServers, nodeServers...)
 
 	for _, nodeServer := range allServers {
-		_, err := api.hcloudClient.Server.Delete(ctx, nodeServer)
+		_, _, err := api.hcloudClient.Server.DeleteWithResult(ctx, nodeServer)
 		if err != nil {
 			log.WithError(err).Warnf("error deleting Server=%s", nodeServer.Name)
 		}
@@ -855,7 +866,7 @@ func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, comman
 
 		workerServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
 			ListOpts: hcloud.ListOpts{
-				LabelSelector: "hcloud/node-group",
+				LabelSelector: nodeGroupSelector,
 			},
 		})
 
@@ -965,7 +976,7 @@ func (api *ApplicationAPI) downloadNewScripts(serverName string, serverIP string
 	return nil
 }
 
-func (api *ApplicationAPI) UpgradeControlPlane(ctx context.Context, version string) {
+func (api *ApplicationAPI) UpgradeControlPlane(ctx context.Context) {
 	log.Info("Executing controlplane upgrade...")
 
 	for i := 1; i <= config.Get().MasterCount; i++ {
@@ -986,17 +997,13 @@ func (api *ApplicationAPI) UpgradeControlPlane(ctx context.Context, version stri
 
 		cmd := "/root/scripts/upgrade-controlplane.sh"
 
-		if len(version) > 0 {
-			cmd = fmt.Sprintf("KUBERNETES_VERSION=%s %s", version, cmd)
-		}
-
 		stdout, stderr, err := api.execCommand(serverIP, cmd)
 		if err != nil {
 			log.WithError(err).Fatal(stderr)
 		}
 
-		log.Debugf("stdout=%s", stdout)
-		log.Debugf("stderr=%s", stderr)
+		log.Debugf(debugStdout, stdout)
+		log.Debugf(debugStderr, stderr)
 	}
 
 	log.Info("Cluster upgraded!")
@@ -1099,7 +1106,7 @@ func (api *ApplicationAPI) CreateFirewall(ctx context.Context, createControlPlan
 			{
 				Type: hcloud.FirewallResourceTypeLabelSelector,
 				LabelSelector: &hcloud.FirewallResourceLabelSelector{
-					Selector: "hcloud/node-group",
+					Selector: nodeGroupSelector,
 				},
 			},
 		},
