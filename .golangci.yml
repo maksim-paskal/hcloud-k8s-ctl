@@ -11,3 +11,4 @@ linters:
   - exhaustruct
   - varnamelen
   - musttag
+  - depguard
