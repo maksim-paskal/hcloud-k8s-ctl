@@ -22,7 +22,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/hetznercloud/hcloud-go/hcloud"
+	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/config"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
