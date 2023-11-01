@@ -25,7 +25,7 @@ systemctl start docker docker.socket
 
 # add arguments to kubelet to use containerd
 cat <<EOF | tee /var/lib/kubelet/kubeadm-flags.env
-KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock --pod-infra-container-image=k8s.gcr.io/pause:3.4.1"
+KUBELET_KUBEADM_ARGS="--container-runtime=remote --container-runtime-endpoint=unix:///run/containerd/containerd.sock --pod-infra-container-image=registry.k8s.io/pause:3.4.1"
 EOF
 
 # change node cri-socket to containerd socket
