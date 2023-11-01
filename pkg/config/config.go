@@ -181,7 +181,7 @@ func defaultConfig() Type { //nolint:funlen
 			},
 			Containerd: serverComponentContainerd{
 				Version:        "1.6.6-1",
-				PauseContainer: "k8s.gcr.io/pause:3.2",
+				PauseContainer: "registry.k8s.io/pause:3.2",
 			},
 		},
 		ClusterName:    "k8s",
