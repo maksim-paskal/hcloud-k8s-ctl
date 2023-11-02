@@ -35,7 +35,7 @@ upgrade-workers-kernel: # upgrade kernel and restart worker node
 run:
 	go run -race ./cmd -config=$(config) -action=$(action) -log.level=DEBUG $(args)
 build:
-	go run github.com/goreleaser/goreleaser@latest build --rm-dist --skip-validate
+	go run github.com/goreleaser/goreleaser@latest build --clean --skip=validate
 apply-yaml:
 	kubectl apply -f ./scripts
 apply-test:
@@ -55,7 +55,8 @@ download-yamls:
 install:
 	go run github.com/goreleaser/goreleaser@latest build \
 	--single-target \
-	--rm-dist \
-	--skip-validate \
+	--clean \
+	--snapshot \
+	--skip=validate \
 	--output /tmp/hcloud-k8s-ctl
 	sudo mv /tmp/hcloud-k8s-ctl /usr/local/bin/hcloud-k8s-ctl
