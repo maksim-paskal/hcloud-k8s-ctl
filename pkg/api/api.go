@@ -20,10 +20,11 @@ import (
 	"net"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/config"
+	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/drain"
+	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
@@ -48,7 +49,7 @@ func NewApplicationAPI(ctx context.Context) (*ApplicationAPI, error) {
 	log.Info("Connecting to Hetzner Cloud API...")
 
 	api := ApplicationAPI{
-		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken.Main)),
+		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken)),
 	}
 
 	if err := api.validateConfig(ctx); err != nil {
@@ -192,11 +193,11 @@ func (api *ApplicationAPI) joinToMasterNodes(ctx context.Context, server string)
 		}
 
 		if retryCount > 0 {
-			time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
+			utils.SleepContext(ctx, config.Get().MasterServers.WaitTimeInRetry)
 		}
 		retryCount++
 
-		log.Infof("Waiting for server... try=%d", retryCount)
+		log.Infof("Waiting for server... try=%03d", retryCount)
 
 		serverIP, err := api.waitForServer(ctx, server)
 		if err != nil {
@@ -240,11 +241,11 @@ func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool)
 		}
 
 		if retryCount > 0 {
-			time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
+			utils.SleepContext(ctx, config.Get().MasterServers.WaitTimeInRetry)
 		}
 		retryCount++
 
-		log.Infof("Waiting for master node... try=%d", retryCount)
+		log.Infof("Waiting for master node... try=%03d", retryCount)
 
 		serverIP, err := api.waitForServer(ctx, serverName)
 		if err != nil {
@@ -305,11 +306,11 @@ func (api *ApplicationAPI) initFirstMasterNode(ctx context.Context) error { //no
 		}
 
 		if retryCount > 0 {
-			time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
+			utils.SleepContext(ctx, config.Get().MasterServers.WaitTimeInRetry)
 		}
 		retryCount++
 
-		log.Infof("Waiting for master node... try=%d", retryCount)
+		log.Infof("Waiting for master node... try=%03d", retryCount)
 
 		serverIP, err := api.waitForServer(ctx, serverName)
 		if err != nil {
@@ -531,7 +532,7 @@ func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:fu
 			err = api.attachToBalancer(ctx, serverResults, k8sLoadBalancer)
 			if err != nil {
 				log.WithError(err).Debug()
-				time.Sleep(config.Get().MasterServers.WaitTimeInRetry)
+				utils.SleepContext(ctx, config.Get().MasterServers.WaitTimeInRetry)
 
 				continue
 			}
@@ -658,78 +659,13 @@ func (api *ApplicationAPI) NewCluster(ctx context.Context) error { //nolint:cycl
 	return nil
 }
 
-func (api *ApplicationAPI) DeleteCluster(ctx context.Context) { //nolint: cyclop,funlen
-	log.Info("Deleting cluster...")
+func (api *ApplicationAPI) DeleteCluster(ctx context.Context) {
+	drainer := drain.NewClusterDrainer(api.hcloudClient)
 
-	k8sNetwork, _, _ := api.hcloudClient.Network.Get(ctx, config.Get().ClusterName)
-	if k8sNetwork != nil {
-		_, err := api.hcloudClient.Network.Delete(ctx, k8sNetwork)
-		if err != nil {
-			log.WithError(err).Warn("error deleting Network")
-		}
-	}
+	drainer.MasterSelector = api.getMasterLabels()
+	drainer.NodeGroupSelector = nodeGroupSelector
 
-	k8sSSHKey, _, _ := api.hcloudClient.SSHKey.Get(ctx, config.Get().ClusterName)
-	if k8sSSHKey != nil {
-		_, err := api.hcloudClient.SSHKey.Delete(ctx, k8sSSHKey)
-		if err != nil {
-			log.WithError(err).Warn("error deleting SSHKey")
-		}
-	}
-
-	k8sLoadBalancer, _, _ := api.hcloudClient.LoadBalancer.Get(ctx, config.Get().ClusterName)
-	if k8sLoadBalancer != nil {
-		_, err := api.hcloudClient.LoadBalancer.Delete(ctx, k8sLoadBalancer)
-		if err != nil {
-			log.WithError(err).Warn("error deleting LoadBalancer")
-		}
-	}
-
-	// get master nodes
-	allServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
-		ListOpts: hcloud.ListOpts{
-			LabelSelector: api.getMasterLabels(),
-		},
-	})
-
-	// get worker nodes
-	nodeServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
-		ListOpts: hcloud.ListOpts{
-			LabelSelector: nodeGroupSelector,
-		},
-	})
-
-	allServers = append(allServers, nodeServers...)
-
-	for _, nodeServer := range allServers {
-		_, _, err := api.hcloudClient.Server.DeleteWithResult(ctx, nodeServer)
-		if err != nil {
-			log.WithError(err).Warnf("error deleting Server=%s", nodeServer.Name)
-		}
-	}
-
-	placementGroup, _, _ := api.hcloudClient.PlacementGroup.Get(ctx, config.Get().MasterServers.PlacementGroupName)
-	if placementGroup != nil {
-		_, err := api.hcloudClient.PlacementGroup.Delete(ctx, placementGroup)
-		if err != nil {
-			log.WithError(err).Warnf("error deleting PlacementGroup=%s", placementGroup.Name)
-		}
-	}
-
-	log.Debug("Wait some time for deleting firewall...")
-	time.Sleep(3 * time.Second) //nolint:gomnd
-
-	k8sFirewalls, _, _ := api.hcloudClient.Firewall.List(ctx, hcloud.FirewallListOpts{
-		ListOpts: hcloud.ListOpts{
-			LabelSelector: "cluster=" + config.Get().ClusterName,
-		},
-	})
-	for _, k8sFirewall := range k8sFirewalls {
-		_, err := api.hcloudClient.Firewall.Delete(ctx, k8sFirewall)
-		if err != nil {
-			log.WithError(err).Warn("error deleting Firewall")
-		}
-	}
+	drainer.DeleteCluster(ctx)
 }
 
 func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string, string, error) {
@@ -848,12 +784,14 @@ func (api *ApplicationAPI) getDeploymentValues() string {
 	return base64.StdEncoding.EncodeToString(resultYAML)
 }
 
-func (api *ApplicationAPI) PatchClusterDeployment(ctx context.Context) {
+func (api *ApplicationAPI) PatchClusterDeployment(ctx context.Context) error {
 	if err := api.postInstall(ctx, true); err != nil {
-		log.Fatal(err)
+		return errors.Wrap(err, "error in patching cluster")
 	}
 
 	log.Info("Cluster pached!")
+
+	return nil
 }
 
 func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, command string, runOnMasters bool, runOnWorkers bool, copyNewScripts bool) { //nolint:funlen,lll,cyclop

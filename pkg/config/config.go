@@ -20,6 +20,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -59,31 +60,6 @@ type masterServers struct {
 	ServersInitParams  masterServersInitParams
 }
 
-type autoscalerWorker struct {
-	Location string
-	Min      int
-	Max      int
-	Type     []string
-}
-
-type autoscalerDefaults struct {
-	Min int
-	Max int
-}
-type autoscaler struct {
-	Enabled  bool
-	Image    string
-	Args     []string
-	Defaults autoscalerDefaults
-	Workers  []autoscalerWorker
-}
-
-type hetznerToken struct {
-	Main string
-	Csi  string
-	Ccm  string
-}
-
 type emptyStruct struct{}
 
 type masterLoadBalancer struct {
@@ -115,13 +91,57 @@ type serverComponents struct {
 	Containerd serverComponentContainerd
 }
 
+type clusterAutoscalingGroup struct {
+	Name    string `yaml:"name"`
+	MinSize int    `yaml:"minSize"`
+	MaxSize int    `yaml:"maxSize"`
+}
+
+func getDefaultMasterServersInitParams(branch string) masterServersInitParams {
+	return masterServersInitParams{
+		TarGz:  fmt.Sprintf("https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/%s.tar.gz", branch),
+		Folder: fmt.Sprintf("hcloud-k8s-ctl-%s", branch),
+	}
+}
+
+func getDefaultClusterAutoscaler() map[interface{}]interface{} {
+	result := make([]*clusterAutoscalingGroup, 0)
+
+	defaultLocations := []string{
+		hcloudLocationEUFalkenstein,
+		hcloudLocationEUNuremberg,
+		hcloudLocationEUHelsinki,
+	}
+	defaultServers := strings.Split(defaultAutoscalerInstances, ",")
+
+	for _, location := range defaultLocations {
+		for _, server := range defaultServers {
+			result = append(result, &clusterAutoscalingGroup{
+				Name: fmt.Sprintf(
+					"%s:%s:%s-%s",
+					strings.ToUpper(server),
+					strings.ToUpper(location),
+					server,
+					location,
+				),
+				MinSize: 1,
+				MaxSize: workersCount,
+			})
+		}
+	}
+
+	return map[interface{}]interface{}{
+		"autoscalingGroups": result,
+	}
+}
+
 //nolint:gochecknoglobals
 var config = Type{}
 
 type Type struct {
 	ClusterName        string             `yaml:"clusterName"`
 	KubeConfigPath     string             `yaml:"kubeConfigPath"`
-	HetznerToken       hetznerToken       `yaml:"hetznerToken"`
+	HetznerToken       string             `yaml:"hetznerToken"`
 	ServerComponents   serverComponents   `yaml:"serverComponents"`
 	IPRange            string             `yaml:"ipRange"`
 	IPRangeSubnet      string             `yaml:"ipRangeSubnet"`
@@ -135,9 +155,17 @@ type Type struct {
 	MasterLoadBalancer masterLoadBalancer `yaml:"masterLoadBalancer"`
 	CliArgs            cliArgs            `yaml:"cliArgs"`
 	Deployments        interface{}        `yaml:"deployments"` // values.yaml in chart
-	Autoscaler         autoscaler         `yaml:"autoscaler"`
 	PreStartScript     string             `yaml:"preStartScript"`
 	PostStartScript    string             `yaml:"postStartScript"`
+
+	// helm dependencies values.yaml
+	ClusterAutoscaler            map[interface{}]interface{} `yaml:"cluster-autoscaler,omitempty"`              //nolint:tagliatelle,lll
+	NfsSubdirExternalProvisioner map[interface{}]interface{} `yaml:"nfs-subdir-external-provisioner,omitempty"` //nolint:tagliatelle,lll
+	KubeletCSRApprover           map[interface{}]interface{} `yaml:"kubelet-csr-approver,omitempty"`            //nolint:tagliatelle,lll
+	HCloudCSI                    map[interface{}]interface{} `yaml:"hcloud-csi,omitempty"`                      //nolint:tagliatelle,lll
+	HCloudCCM                    map[interface{}]interface{} `yaml:"hcloud-cloud-controller-manager,omitempty"` //nolint:tagliatelle,lll
+	MetricsServer                map[interface{}]interface{} `yaml:"metrics-server,omitempty"`                  //nolint:tagliatelle,lll
+	Flannel                      map[interface{}]interface{} `yaml:"flannel,omitempty"`                         //nolint:tagliatelle,lll
 }
 
 //nolint:gochecknoglobals
@@ -156,7 +184,11 @@ var cliArguments = cliArgs{
 	CreateFirewallWorkers:      flag.Bool("create-firewall.workers", false, "create firewall for workers"),
 }
 
-func defaultConfig() Type { //nolint:funlen
+func SetBranch(branch string) {
+	config.MasterServers.ServersInitParams = getDefaultMasterServersInitParams(branch)
+}
+
+func defaultConfig() Type {
 	privateKey := "~/.ssh/id_rsa"
 	kubeConfigPath := "~/.kube/hcloud"
 
@@ -164,9 +196,7 @@ func defaultConfig() Type { //nolint:funlen
 	serverLabels["role"] = "master"
 
 	return Type{
-		HetznerToken: hetznerToken{
-			Main: os.Getenv("HCLOUD_TOKEN"),
-		},
+		HetznerToken: os.Getenv("HCLOUD_TOKEN"),
 		ServerComponents: serverComponents{
 			Ubuntu: serverComponentUbuntu{
 				Version:      "ubuntu-20.04",
@@ -174,13 +204,13 @@ func defaultConfig() Type { //nolint:funlen
 				Architecture: hcloud.ArchitectureX86, // x86 or arm
 			},
 			Kubernetes: serverComponentKubernetes{
-				Version: "1.24.9",
+				Version: "1.28.2",
 			},
 			Docker: serverComponentDocker{
-				Version: "5:20.10.17~3-0~ubuntu-focal",
+				Version: "5:24.0.6-1~ubuntu.20.04~focal",
 			},
 			Containerd: serverComponentContainerd{
-				Version:        "1.6.6-1",
+				Version:        "1.6.24-1",
 				PauseContainer: "registry.k8s.io/pause:3.2",
 			},
 		},
@@ -202,55 +232,15 @@ func defaultConfig() Type { //nolint:funlen
 			Labels:             serverLabels,
 			WaitTimeInRetry:    waitTimeInRetry,
 			RetryTimeLimit:     retryTimeLimit,
-			ServersInitParams: masterServersInitParams{
-				TarGz:  "https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/main.tar.gz",
-				Folder: "hcloud-k8s-ctl-main",
-			},
+			ServersInitParams:  getDefaultMasterServersInitParams("main"),
 		},
 		MasterLoadBalancer: masterLoadBalancer{
 			LoadBalancerType: "lb11",
 			ListenPort:       loadBalancerDefaultPort,
 			DestinationPort:  loadBalancerDefaultPort,
 		},
-		Deployments: emptyStruct{},
-		Autoscaler: autoscaler{
-			Enabled: true,
-			Image:   "docker.io/paskalmaksim/cluster-autoscaler-amd64:fc3aefc3d",
-			Args: []string{
-				"--v=4",
-				"--cloud-provider=hetzner",
-				"--stderrthreshold=info",
-				"--expander=least-waste",
-				"--scale-down-enabled=true",
-				"--skip-nodes-with-local-storage=false",
-				"--skip-nodes-with-system-pods=false",
-				"--scale-down-utilization-threshold=0.8",
-			},
-			Defaults: autoscalerDefaults{
-				Min: 0,
-				Max: workersCount,
-			},
-			Workers: []autoscalerWorker{
-				{
-					Location: hcloudLocationEUFalkenstein,
-					Min:      0,
-					Max:      0,
-					Type:     strings.Split(defaultAutoscalerInstances, ","),
-				},
-				{
-					Location: hcloudLocationEUNuremberg,
-					Min:      0,
-					Max:      0,
-					Type:     strings.Split(defaultAutoscalerInstances, ","),
-				},
-				{
-					Location: hcloudLocationEUHelsinki,
-					Min:      0,
-					Max:      0,
-					Type:     strings.Split(defaultAutoscalerInstances, ","),
-				},
-			},
-		},
+		Deployments:       emptyStruct{},
+		ClusterAutoscaler: getDefaultClusterAutoscaler(),
 	}
 }
 
@@ -262,12 +252,12 @@ func Load() error { //nolint: cyclop
 
 	config = defaultConfig()
 
-	if len(config.HetznerToken.Main) == 0 {
+	if len(config.HetznerToken) == 0 {
 		auth, err := os.ReadFile(".hcloudauth")
 		if err != nil {
 			log.Debug(err)
 		} else {
-			config.HetznerToken.Main = string(auth)
+			config.HetznerToken = string(auth)
 		}
 	}
 
@@ -309,7 +299,7 @@ func Load() error { //nolint: cyclop
 }
 
 func Check() error {
-	if len(config.HetznerToken.Main) == 0 {
+	if len(config.HetznerToken) == 0 {
 		return errNoHetznerToken
 	}
 
@@ -325,19 +315,21 @@ func hideSensitiveData(out []byte, sensitive string) []byte {
 		return out
 	}
 
-	return bytes.ReplaceAll(out, []byte(sensitive), []byte("<secret>"))
+	return bytes.ReplaceAll(out, []byte(sensitive), []byte(secretString))
 }
 
 func String() string {
-	out, err := yaml.Marshal(config)
-	if err != nil {
-		return fmt.Sprintf("ERROR: %t", err)
+	var b bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&b)
+	yamlEncoder.SetIndent(2) //nolint:gomnd
+
+	if err := yamlEncoder.Encode(&config); err != nil {
+		return fmt.Sprintf("ERROR %s", err)
 	}
 
+	out := b.Bytes()
 	// remove sensitive data
-	out = hideSensitiveData(out, config.HetznerToken.Main)
-	out = hideSensitiveData(out, config.HetznerToken.Ccm)
-	out = hideSensitiveData(out, config.HetznerToken.Csi)
+	out = hideSensitiveData(out, config.HetznerToken)
 
 	return string(out)
 }
@@ -364,14 +356,13 @@ func envDefault(name string, defaultValue string) string {
 }
 
 func SaveConfig(filePath string) error {
-	configByte, err := yaml.Marshal(config)
-	if err != nil {
-		return errors.Wrap(err, "failed to marshal config")
-	}
-
 	const configPermissions = 0o600
 
-	err = os.WriteFile(filePath, hideSensitiveData(configByte, config.HetznerToken.Main), configPermissions)
+	re := regexp.MustCompile("(?m)[\r\n]+^.*(kubeConfigPath|hetznerToken|sshPrivateKey|sshPublicKey).*$")
+
+	content := re.ReplaceAllString(String(), "")
+
+	err := os.WriteFile(filePath, []byte(content), configPermissions)
 	if err != nil {
 		return errors.Wrap(err, "failed to write config file")
 	}

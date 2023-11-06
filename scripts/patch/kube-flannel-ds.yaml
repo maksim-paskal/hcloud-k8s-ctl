@@ -1,0 +1,25 @@
+spec:
+  template:
+    spec:
+      initContainers:
+      - name: install-cni-plugin
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+      - name: install-cni
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+      containers:
+      - name: kube-flannel
+        resources:
+          requests:
+            cpu: 100m
+            memory: 50Mi
+        env:
+        - name: FLANNELD_IFACE
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP

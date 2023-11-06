@@ -65,7 +65,7 @@ metadata:
   labels:
     app: docker-registry
 spec:
-  type: ClusterIP
+  type: {{ .Values.deployments.registry.service.type }}
   clusterIP: {{ .Values.deployments.registry.clusterIP }}
   ports:
   - name: registry

@@ -22,6 +22,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/maksim-paskal/hcloud-k8s-ctl/internal"
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/api"
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/config"
 	log "github.com/sirupsen/logrus"
@@ -47,7 +48,7 @@ func main() { //nolint:cyclop,funlen
 
 	log.SetReportCaller(true)
 
-	if err := config.Load(); err != nil {
+	if err := internal.Init(); err != nil {
 		log.WithError(err).Fatal("error loading config")
 	}
 
@@ -57,8 +58,6 @@ func main() { //nolint:cyclop,funlen
 	}
 
 	log.SetLevel(logLevel)
-
-	log.Infof("Loaded config:\n%s\n", config.String())
 
 	if err := config.Check(); err != nil {
 		log.WithError(err).Fatal("error checking config")
@@ -80,7 +79,10 @@ func main() { //nolint:cyclop,funlen
 	case "list-configurations":
 		applicationAPI.ListConfigurations(ctx)
 	case "patch-cluster":
-		applicationAPI.PatchClusterDeployment(ctx)
+		err = applicationAPI.PatchClusterDeployment(ctx)
+		if err != nil {
+			log.WithError(err).Fatal()
+		}
 	case "adhoc":
 		if len(*config.Get().CliArgs.AdhocCommand) == 0 {
 			log.Fatal("add -adhoc.command argument")
@@ -123,6 +125,7 @@ func getInterruptionContext() context.Context {
 
 	go func() {
 		<-c
+		log.Warn("Received interruption signal, stopping...")
 		cancel()
 
 		// wait 5s for graceful shutdown

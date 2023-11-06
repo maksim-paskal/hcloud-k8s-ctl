@@ -4,31 +4,6 @@ hetznerToken:
   ccm: null
 clusterName: k8s
 location: nbg1
-autoscaler:
-  enabled: true
-  args:
-  - --v=4
-  - --cloud-provider=hetzner
-  - --stderrthreshold=info
-  - --expander=least-waste
-  - --scale-down-enabled=true
-  - --skip-nodes-with-local-storage=false
-  - --skip-nodes-with-system-pods=false
-  - --scale-down-utilization-threshold=0.8
-  defaults:
-    min: 0
-    max: 20
-  workers:
-  - location: ""
-    min: 0
-    max: 0
-    type:
-    - cx11  
-    - cx21
-    - cpx31
-    - cpx41
-    - cx51
-    - cpx51
 deployments:
   nfs:
     server:
@@ -43,21 +18,35 @@ deployments:
     image: registry:2.8.1
     imagePullPolicy: IfNotPresent
     clusterIP: "10.100.0.11"
+    service:
+      type: ClusterIP
     env: {}
     resources:
       requests:
         cpu: 10m
         memory: 100Mi
-  ccmconfig:
-    env:
-    - name: HCLOUD_NETWORK_ROUTES_ENABLED
+
+hcloud-cloud-controller-manager:
+  replicaCount: 2
+  env:
+    NODE_NAME:
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+    HCLOUD_NETWORK_ROUTES_ENABLED:
       value: "false"
-    - name: HCLOUD_NETWORK
-      value: "{{ .Values.clusterName }}"
-    - name: HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP
+    HCLOUD_NETWORK:
+      valueFrom:
+        configMapKeyRef:
+          name: hcloud-ccm-env
+          key: HCLOUD_NETWORK
+    HCLOUD_LOAD_BALANCERS_USE_PRIVATE_IP:
       value: "true"
-    - name: HCLOUD_LOAD_BALANCERS_LOCATION
-      value: "{{ lower .Values.location }}"
+    HCLOUD_LOAD_BALANCERS_LOCATION:
+      valueFrom:
+        configMapKeyRef:
+          name: hcloud-ccm-env
+          key: HCLOUD_LOAD_BALANCERS_LOCATION
 
 nfs-subdir-external-provisioner:
   replicaCount: 2
@@ -78,3 +67,86 @@ nfs-subdir-external-provisioner:
 
 kubelet-csr-approver:
   bypassDnsResolution: true
+
+cluster-autoscaler:
+  replicaCount: 2
+  priorityClassName: system-cluster-critical
+  resources:
+    requests:
+      cpu: 100m
+      memory: 300Mi
+  tolerations:
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/master
+  - effect: NoSchedule
+    key: node-role.kubernetes.io/control-plane
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - cluster-autoscaler
+        topologyKey: kubernetes.io/hostname
+  cloudProvider: hetzner
+  autoDiscovery:
+    clusterName: k8s
+  extraArgs:
+    expander: least-waste
+    scale-down-enabled: true
+    skip-nodes-with-local-storage: false
+    skip-nodes-with-system-pods: false
+    scale-down-utilization-threshold: 0.8
+  envFromConfigMap: "cluster-autoscaler-env"
+  extraEnvConfigMaps:
+    HCLOUD_CLOUD_INIT:
+      name: hcloud-init
+      key: bootstrap
+  extraEnvSecrets:
+    HCLOUD_TOKEN:
+      name: hcloud
+      key: token
+
+hcloud-csi:
+  controller:
+    resources:
+      csiAttacher:
+        requests:
+          cpu: 10m
+          memory: 50Mi
+      csiResizer:
+        requests:
+          cpu: 10m
+          memory: 50Mi
+      csiProvisioner:
+        requests:
+          cpu: 10m
+          memory: 50Mi
+      livenessProbe:
+        requests:
+          cpu: 10m
+          memory: 50Mi
+      hcloudCSIDriver:
+        requests:
+          cpu: 10m
+          memory: 50Mi
+    hcloudToken:
+      existingSecret:
+        name: hcloud-csi
+        key: token
+  node:
+    resources:
+      csiNodeDriverRegistrar:
+        requests:
+          cpu: 10m
+          memory: 50Mi
+      livenessProbe:
+        requests:
+          cpu: 10m
+          memory: 50Mi
+      hcloudCSIDriver:
+        requests:
+          cpu: 10m
+          memory: 50Mi

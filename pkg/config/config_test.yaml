@@ -1,5 +1,4 @@
 ipRange: "11.0.0.0/16"
 ipRangeSubnet: "11.0.0.0/17"
 masterCount: 33
-hetznerToken:
-  main: sometoken
+hetznerToken: "sometoken"

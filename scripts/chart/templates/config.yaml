@@ -5,7 +5,7 @@ metadata:
   name: hcloud
 type: Opaque
 data:
-  token: {{ .Values.hetznerToken.main | b64enc | quote }}
+  token: {{ .Values.hetznerToken | b64enc | quote }}
 ---
 apiVersion: v1
 kind: Secret
@@ -13,7 +13,7 @@ metadata:
   name: hcloud-csi
 type: Opaque
 data:
-  token: {{ default .Values.hetznerToken.main .Values.hetznerToken.csi | b64enc | quote }}
+  token: {{ .Values.hetznerToken | b64enc | quote }}
 ---
 apiVersion: v1
 kind: Secret
@@ -21,4 +21,21 @@ metadata:
   name: hcloud-ccm
 type: Opaque
 data:
-  token: {{ default .Values.hetznerToken.main .Values.hetznerToken.ccm | b64enc | quote }}
+  token: {{ .Values.hetznerToken | b64enc | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hcloud-ccm-env
+data:
+  HCLOUD_NETWORK: {{ .Values.clusterName | quote }}
+  HCLOUD_LOAD_BALANCERS_LOCATION: {{ lower .Values.location | quote }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cluster-autoscaler-env
+data:
+  HCLOUD_IMAGE: {{ .Values.serverComponents.ubuntu.version | quote }}
+  HCLOUD_SSH_KEY: {{ .Values.clusterName | quote }}
+  HCLOUD_NETWORK: {{ .Values.clusterName | quote }}
