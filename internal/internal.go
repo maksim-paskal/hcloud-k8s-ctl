@@ -10,39 +10,24 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package config_test
+package internal
 
 import (
-	"strings"
-	"testing"
-
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/config"
+	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
-func TestConfig(t *testing.T) {
-	t.Parallel()
-
+func Init() error {
 	if err := config.Load(); err != nil {
-		t.Fatal(err)
+		return errors.Wrap(err, "error loading config")
 	}
 
-	if config.Get().IPRange != "11.0.0.0/16" {
-		t.Fatal("IPRange is not valid")
+	log.Infof("Loaded config:\n%s\n", config.String())
+
+	if err := config.Check(); err != nil {
+		return errors.Wrap(err, "error checking config")
 	}
 
-	if config.Get().IPRangeSubnet != "11.0.0.0/17" {
-		t.Fatal("IPRangeSubnet is not valid")
-	}
-
-	if config.Get().MasterCount != 33 {
-		t.Fatal("MasterCount != 33")
-	}
-
-	if config.Get().HetznerToken != "sometoken" {
-		t.Fatal("HetznerToken != sometoken")
-	}
-
-	if strings.Contains(config.String(), "sometoken") {
-		t.Fatal("config has secret tokens")
-	}
+	return nil
 }

@@ -19,16 +19,16 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: {{ $.Release.Name }}
+      app: {{ $.Release.Name }}-{{ $location }}
   replicas: 1
   template:
     metadata:
       labels:
-        app: {{ $.Release.Name }}
+        app: {{ $.Release.Name }}-{{ $location }}
     spec:
       nodeSelector:
         topology.kubernetes.io/region: {{ $location }}
-        beta.kubernetes.io/instance-type: cx21
+        node.kubernetes.io/instance-type: cx21
       volumes:
       - name: my-csi-volume
         persistentVolumeClaim:
@@ -38,6 +38,7 @@ spec:
         image: nginx:1.14.2
         resources:
           limits:
+            cpu: 100m
             memory: 100Mi
         ports:
         - containerPort: 80

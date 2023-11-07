@@ -20,6 +20,7 @@ const (
 	loadBalancerDefaultPort     = 6443
 	waitTimeInRetry             = 3 * time.Second
 	retryTimeLimit              = 20
+	secretString                = "<secret>"
 	defaultLocation             = hcloudLocationEUFalkenstein
 	defaultDatacenter           = hcloudLocationEUFalkenstein + "-dc14"
 	defaultAutoscalerInstances  = "cx21,cpx21,cx31,cpx31,cx41,cpx41,cx51,cpx51"

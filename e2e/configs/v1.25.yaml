@@ -1,0 +1,30 @@
+# Kubernetes v1.25 in Europe
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  kubernetes:
+    version: 1.25.14
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1
+cluster-autoscaler:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 300Mi
+preStartScript: |
+  # add some custom cron job on node
+  crontab <<EOF
+  0 0 * * * /usr/bin/docker system prune -af
+  EOF
+
+  # add containerd config for some registries
+  mkdir -p /etc/containerd/certs.d/some-registry.io
+  cat > /etc/containerd/certs.d/some-registry.io/hosts.toml <<EOF
+  server = "https://some-registry.io"
+
+  [host."http://10.10.10.10:5000"]
+  capabilities = ["pull", "resolve"]
+  EOF

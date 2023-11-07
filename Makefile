@@ -1,8 +1,9 @@
 KUBECONFIG=$(HOME)/.kube/hcloud
 action=list-configurations
 config=config.yaml
-fullConfig=./examples/config-full.yaml
+fullConfig=./e2e/configs/full.yaml
 args=""
+branch=`git rev-parse --abbrev-ref HEAD`
 
 test:
 	./scripts/validate-license.sh
@@ -10,6 +11,11 @@ test:
 	go mod tidy
 	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run -v
 	CONFIG=config_test.yaml go test -race -coverprofile coverage.out ./cmd/... ./pkg/...
+.PHONY: e2e
+e2e:
+	GIT_BRANCH=$(branch) go test -v -count=1 -timeout=4h ./e2e/e2e_test.go
+update-readme:
+	go run ./utils/main.go
 coverage:
 	go tool cover -html=coverage.out
 create-cluster:
@@ -49,9 +55,6 @@ test-kubernetes-yaml:
 	helm lint ./examples/charts/test --values=$(fullConfig)
 	helm template ./scripts/chart --values=$(fullConfig) | kubectl apply --dry-run=client --validate=true -f -
 	helm template ./examples/charts/test --values=$(fullConfig) | kubectl apply --dry-run=client --validate=true -f -
-download-yamls:
-	curl -sSL -o ./scripts/chart/templates/kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-	curl -sSL -o ./scripts/chart/templates/metrics-server.yml https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 install:
 	go run github.com/goreleaser/goreleaser@latest build \
 	--single-target \

@@ -18,4 +18,4 @@ spec:
   minAvailable: 1
   selector:
     matchLabels:
-      app: hcloud-cloud-controller-manager
+      app.kubernetes.io/name: hcloud-cloud-controller-manager

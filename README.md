@@ -24,7 +24,7 @@ for other OS download binnary from [release pages](https://github.com/maksim-pas
 
 This will create kubernetes cluster in Hetzner Cloud Europe region with 3 instances, 1 load balancer for the kubernetes control plane and 1 kubernetes worker node, after successful installation the cluster will have:
 
-- [Kubernetes v1.24](https://github.com/kubernetes/kubernetes)
+- [Kubernetes v1.28](https://github.com/kubernetes/kubernetes)
 - [Kubernetes Autoscaler](https://github.com/kubernetes/autoscaler)
 - [Flannel](https://github.com/flannel-io/flannel)
 - [Kubernetes Cloud Controller Manager for Hetzner Cloud](https://github.com/hetznercloud/hcloud-cloud-controller-manager)
@@ -36,7 +36,7 @@ This will create kubernetes cluster in Hetzner Cloud Europe region with 3 instan
 
 for HA needs odd number of master nodes (minimum 3) <https://etcd.io/docs/v3.4/faq/#why-an-odd-number-of-cluster-members>
 
-create a simple configuration file `config.yaml` full configuration example [here](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/examples/config-full.yaml)
+Create a simple configuration file `config.yaml` full configuration example [here](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/e2e/configs/full.yaml)
 
 ```yaml
 # kubeconfig path
@@ -49,22 +49,183 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 ```
 
-to create kubernetes cluster in Hetzner Cloud US region append to `config.yaml` next lines
+customize configuration file for your needs
 
 ```yaml
+# kubeconfig path
+kubeConfigPath: ~/.kube/hcloud
+# Hetzner cloud internal network CIDR
+ipRange: "10.0.0.0/16"
+# servers for kubernetes master (recommended 3)
+# for development purposes cluster can have 1 master node  
+# in this case cluster will be created without load balancer and pods can schedule on master
+masterCount: 3
+# server components for all nodes in cluster
+serverComponents:
+  kubernetes:
+    # customize kubertenes version
+    version: 1.25.14
+  docker:
+    # customize apt package version for docker install
+    # apt-cache madison docker-ce
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    # customize apt package version for containerd install
+    # apt-cache madison containerd.io
+    version: 1.6.24-1
+# add autoscaler chart extra values
+cluster-autoscaler:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 200m
+      memory: 300Mi
+# add some custom script for all nodes in cluster
+preStartScript: |
+  # add some custom cron job on node
+  crontab <<EOF
+  0 0 * * * /usr/bin/docker system prune -af
+  EOF
+
+  # add containerd config for some registries
+  mkdir -p /etc/containerd/certs.d/some-registry.io
+  cat > /etc/containerd/certs.d/some-registry.io/hosts.toml <<EOF
+  server = "https://some-registry.io"
+
+  [host."http://10.10.10.10:5000"]
+  capabilities = ["pull", "resolve"]
+  EOF
+```
+
+<!--- move_e2e_details_start -->
+<details><summary>Kubernetes v1.25 in Europe</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  kubernetes:
+    version: 1.25.14
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1
+cluster-autoscaler:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 300Mi
+preStartScript: |
+  # add some custom cron job on node
+  crontab <<EOF
+  0 0 * * * /usr/bin/docker system prune -af
+  EOF
+
+  # add containerd config for some registries
+  mkdir -p /etc/containerd/certs.d/some-registry.io
+  cat > /etc/containerd/certs.d/some-registry.io/hosts.toml <<EOF
+  server = "https://some-registry.io"
+
+  [host."http://10.10.10.10:5000"]
+  capabilities = ["pull", "resolve"]
+  EOF
+```
+</details>
+<details><summary>Kubernetes v1.26 in Europe</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  kubernetes:
+    version: 1.26.9
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1
+
+```
+</details>
+<details><summary>Kubernetes v1.27 in Europe</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  kubernetes:
+    version: 1.27.6
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1
+
+```
+</details>
+<details><summary>Kubernetes v1.28 in Europe</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  kubernetes:
+    version: 1.28.2
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1
+
+```
+</details>
+<details><summary>Kubernetes v1.28 in US East</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
 networkZone: us-east
 location: ash
 datacenter: ash-dc1
 masterServers:
   servertype: cpx21
-autoscaler:
-  workers:
-  - location: ash
-    type:
-    - cpx51
+serverComponents:
+  kubernetes:
+    version: 1.28.2
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1
+cluster-autoscaler:
+  autoscalingGroups:
+  - name: CPX51:ASH:cpx51-ash
+    minSize: 1
+    maxSize: 20
 ```
+</details>
+<details><summary>Kubernetes v1.28 in Europe (ARM64 architecture)</summary>
 
-and start application
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  ubuntu:
+    architecture: arm
+  kubernetes:
+    version: 1.28.2
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1
+masterServers:
+  servertype: cax11
+cluster-autoscaler:
+  autoscalingGroups:
+  - name: CAX41:FSN1:cax-fsn1
+    minSize: 1
+    maxSize: 20
+```
+</details>
+
+<!--- move_e2e_details_end -->
 
 ```bash
 # create 3 instance with 1 load balancer

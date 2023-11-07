@@ -1,0 +1,10 @@
+# Kubernetes v1.26 in Europe
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  kubernetes:
+    version: 1.26.9
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1

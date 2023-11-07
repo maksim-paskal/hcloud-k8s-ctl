@@ -1,0 +1,124 @@
+clusterName: k8s
+serverComponents:
+  ubuntu:
+    version: ubuntu-20.04
+    username: hcloud-user
+    architecture: x86
+  kubernetes:
+    version: 1.28.2
+  docker:
+    version: 5:24.0.6-1~ubuntu.20.04~focal
+  containerd:
+    version: 1.6.24-1
+    pausecontainer: registry.k8s.io/pause:3.2
+ipRange: 10.0.0.0/16
+ipRangeSubnet: 10.0.0.0/16
+masterCount: 3
+networkZone: eu-central
+location: fsn1
+datacenter: fsn1-dc14
+masterServers:
+  namepattern: master-%d
+  placementgroupname: master-placement-group
+  servertype: cx21
+  labels:
+    role: master
+  waittimeinretry: 3s
+  retrytimelimit: 20
+  serversinitparams:
+    targz: https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/main.tar.gz
+    folder: hcloud-k8s-ctl-main
+masterLoadBalancer:
+  loadbalancertype: lb11
+  listenport: 6443
+  destinationport: 6443
+cliArgs:
+  loglevel: DEBUG
+  configpath: config.yaml
+  saveconfigpath: ./e2e/configs/full.yaml
+  action: save-full-config
+  adhoccommand: ""
+  adhoccopynewfile: false
+  adhocmasters: false
+  adhocworkers: true
+  adhocuser: ""
+  upgradecontrolplaneversion: ""
+  createfirewallcontrolplane: false
+  createfirewallworkers: false
+deployments: {}
+preStartScript: ""
+postStartScript: ""
+cluster-autoscaler:
+  autoscalingGroups:
+    - name: CX21:FSN1:cx21-fsn1
+      minSize: 1
+      maxSize: 20
+    - name: CPX21:FSN1:cpx21-fsn1
+      minSize: 1
+      maxSize: 20
+    - name: CX31:FSN1:cx31-fsn1
+      minSize: 1
+      maxSize: 20
+    - name: CPX31:FSN1:cpx31-fsn1
+      minSize: 1
+      maxSize: 20
+    - name: CX41:FSN1:cx41-fsn1
+      minSize: 1
+      maxSize: 20
+    - name: CPX41:FSN1:cpx41-fsn1
+      minSize: 1
+      maxSize: 20
+    - name: CX51:FSN1:cx51-fsn1
+      minSize: 1
+      maxSize: 20
+    - name: CPX51:FSN1:cpx51-fsn1
+      minSize: 1
+      maxSize: 20
+    - name: CX21:NBG1:cx21-nbg1
+      minSize: 1
+      maxSize: 20
+    - name: CPX21:NBG1:cpx21-nbg1
+      minSize: 1
+      maxSize: 20
+    - name: CX31:NBG1:cx31-nbg1
+      minSize: 1
+      maxSize: 20
+    - name: CPX31:NBG1:cpx31-nbg1
+      minSize: 1
+      maxSize: 20
+    - name: CX41:NBG1:cx41-nbg1
+      minSize: 1
+      maxSize: 20
+    - name: CPX41:NBG1:cpx41-nbg1
+      minSize: 1
+      maxSize: 20
+    - name: CX51:NBG1:cx51-nbg1
+      minSize: 1
+      maxSize: 20
+    - name: CPX51:NBG1:cpx51-nbg1
+      minSize: 1
+      maxSize: 20
+    - name: CX21:HEL1:cx21-hel1
+      minSize: 1
+      maxSize: 20
+    - name: CPX21:HEL1:cpx21-hel1
+      minSize: 1
+      maxSize: 20
+    - name: CX31:HEL1:cx31-hel1
+      minSize: 1
+      maxSize: 20
+    - name: CPX31:HEL1:cpx31-hel1
+      minSize: 1
+      maxSize: 20
+    - name: CX41:HEL1:cx41-hel1
+      minSize: 1
+      maxSize: 20
+    - name: CPX41:HEL1:cpx41-hel1
+      minSize: 1
+      maxSize: 20
+    - name: CX51:HEL1:cx51-hel1
+      minSize: 1
+      maxSize: 20
+    - name: CPX51:HEL1:cpx51-hel1
+      minSize: 1
+      maxSize: 20
