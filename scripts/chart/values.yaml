@@ -111,6 +111,7 @@ cluster-autoscaler:
 
 hcloud-csi:
   controller:
+    priorityClassName: "system-cluster-critical"
     resources:
       csiAttacher:
         requests:
@@ -137,6 +138,7 @@ hcloud-csi:
         name: hcloud-csi
         key: token
   node:
+    priorityClassName: "system-node-critical"
     resources:
       csiNodeDriverRegistrar:
         requests:
