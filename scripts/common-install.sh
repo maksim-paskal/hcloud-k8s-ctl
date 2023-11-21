@@ -22,7 +22,7 @@ export PAUSE_CONTAINER="{{ .Values.serverComponents.containerd.pausecontainer }}
 
 # https://containerd.io/releases/#kubernetes-support
 # to select all available versions, run
-# apt-cache madison docker-ce containerd.io kubelet
+# make make ubuntu-versions
 
 export DEBIAN_FRONTEND=noninteractive
 export HOME=/root/

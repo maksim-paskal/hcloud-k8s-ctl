@@ -63,3 +63,6 @@ install:
 	--skip=validate \
 	--output /tmp/hcloud-k8s-ctl
 	sudo mv /tmp/hcloud-k8s-ctl /usr/local/bin/hcloud-k8s-ctl
+
+ubuntu-versions:
+	docker run -v `pwd`:/app -it ubuntu:20.04 /app/scripts/ubuntu-versions.sh
