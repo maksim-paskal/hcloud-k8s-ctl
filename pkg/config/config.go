@@ -124,7 +124,7 @@ func getDefaultClusterAutoscaler() map[interface{}]interface{} {
 					server,
 					location,
 				),
-				MinSize: 1,
+				MinSize: 0,
 				MaxSize: workersCount,
 			})
 		}
