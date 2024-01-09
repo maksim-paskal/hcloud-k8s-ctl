@@ -794,6 +794,34 @@ func (api *ApplicationAPI) PatchClusterDeployment(ctx context.Context) error {
 	return nil
 }
 
+func (api *ApplicationAPI) listServers(ctx context.Context, labelSelector string) ([]*hcloud.Server, error) {
+	servers := make([]*hcloud.Server, 0)
+
+	opts := hcloud.ServerListOpts{
+		ListOpts: hcloud.ListOpts{
+			Page:          1,
+			LabelSelector: labelSelector,
+		},
+	}
+
+	for ctx.Err() == nil {
+		page, _, err := api.hcloudClient.Server.List(ctx, opts)
+		if err != nil {
+			return nil, errors.Wrap(err, "error in list servers")
+		}
+
+		if len(page) == 0 {
+			break
+		}
+
+		opts.ListOpts.Page++
+
+		servers = append(servers, page...)
+	}
+
+	return servers, nil
+}
+
 func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, command string, runOnMasters bool, runOnWorkers bool, copyNewScripts bool) { //nolint:funlen,lll,cyclop
 	log.Info("Executing adhoc...")
 
@@ -806,11 +834,10 @@ func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, comman
 	if runOnWorkers {
 		log.Info("Get worker nodes...")
 
-		workerServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
-			ListOpts: hcloud.ListOpts{
-				LabelSelector: nodeGroupSelector,
-			},
-		})
+		workerServers, err := api.listServers(ctx, nodeGroupSelector)
+		if err != nil {
+			log.WithError(err).Error()
+		}
 
 		allServers = append(allServers, workerServers...)
 	}
@@ -818,11 +845,10 @@ func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, comman
 	if runOnMasters {
 		log.Info("Get master nodes...")
 
-		masterServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
-			ListOpts: hcloud.ListOpts{
-				LabelSelector: api.getMasterLabels(),
-			},
-		})
+		masterServers, err := api.listServers(ctx, api.getMasterLabels())
+		if err != nil {
+			log.WithError(err).Error()
+		}
 
 		allServers = append(allServers, masterServers...)
 	}
@@ -832,6 +858,8 @@ func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, comman
 
 		return
 	}
+
+	log.Infof("Servers found: %d", len(allServers))
 
 	adhocStatus := make(map[string]string)
 
