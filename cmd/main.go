@@ -25,13 +25,15 @@ import (
 	"github.com/maksim-paskal/hcloud-k8s-ctl/internal"
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/api"
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/config"
+	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/version"
 	log "github.com/sirupsen/logrus"
 )
 
 //nolint:gochecknoglobals
 var (
-	gitVersion  = "dev"
-	versionFlag = flag.Bool("version", false, "version")
+	gitVersion      = "dev"
+	versionFlag     = flag.Bool("version", false, "version")
+	checkNewVersion = flag.Bool("check-new-version", true, "check new version")
 )
 
 func main() { //nolint:cyclop,funlen
@@ -58,6 +60,12 @@ func main() { //nolint:cyclop,funlen
 	}
 
 	log.SetLevel(logLevel)
+
+	if *checkNewVersion {
+		if err := version.CheckLatest(ctx, gitVersion); err != nil {
+			log.WithError(err).Warn("error check latest version")
+		}
+	}
 
 	if err := config.Check(); err != nil {
 		log.WithError(err).Fatal("error checking config")

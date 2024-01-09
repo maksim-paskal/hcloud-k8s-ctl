@@ -12,3 +12,4 @@ linters:
   - varnamelen
   - musttag
   - depguard
+  - gochecknoglobals
