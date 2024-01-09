@@ -1,14 +1,16 @@
 on:
   workflow_dispatch:
-  pull_request:
 
 jobs:
   e2e:
     name: e2e
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-go@v2
       with:
         go-version: '1.21'
     - uses: actions/checkout@v2
+    - run: ssh-keygen -t rsa -q -f "$HOME/.ssh/id_rsa" -N ""
     - run: make e2e branch=$GITHUB_HEAD_REF
+      env:
+        HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
