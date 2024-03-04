@@ -7,6 +7,17 @@ misspell:
 linters:
   enable-all: true
   disable:
+  # deprecated
+  - maligned
+  - varcheck
+  - scopelint
+  - ifshort
+  - interfacer
+  - structcheck
+  - nosnakecase
+  - golint
+  - deadcode
+  ############
   - exhaustivestruct
   - exhaustruct
   - varnamelen

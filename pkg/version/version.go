@@ -24,7 +24,7 @@ import (
 )
 
 var versionClient = http.Client{
-	CheckRedirect: func(req *http.Request, via []*http.Request) error {
+	CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
 		return http.ErrUseLastResponse
 	},
 }
