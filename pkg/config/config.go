@@ -100,7 +100,7 @@ type clusterAutoscalingGroup struct {
 func getDefaultMasterServersInitParams(branch string) masterServersInitParams {
 	return masterServersInitParams{
 		TarGz:  fmt.Sprintf("https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/%s.tar.gz", branch),
-		Folder: fmt.Sprintf("hcloud-k8s-ctl-%s", branch),
+		Folder: "hcloud-k8s-ctl-" + branch,
 	}
 }
 
@@ -222,7 +222,7 @@ func defaultConfig() Type {
 		Datacenter:     defaultDatacenter,
 		KubeConfigPath: kubeConfigPath,
 		SSHPrivateKey:  privateKey,
-		SSHPublicKey:   fmt.Sprintf("%s.pub", privateKey),
+		SSHPublicKey:   privateKey + ".pub",
 		MasterCount:    masterServersCount,
 		CliArgs:        cliArguments,
 		MasterServers: masterServers{

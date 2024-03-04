@@ -195,6 +195,7 @@ func (api *ApplicationAPI) joinToMasterNodes(ctx context.Context, server string)
 		if retryCount > 0 {
 			utils.SleepContext(ctx, config.Get().MasterServers.WaitTimeInRetry)
 		}
+
 		retryCount++
 
 		log.Infof("Waiting for server... try=%03d", retryCount)
@@ -243,6 +244,7 @@ func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool)
 		if retryCount > 0 {
 			utils.SleepContext(ctx, config.Get().MasterServers.WaitTimeInRetry)
 		}
+
 		retryCount++
 
 		log.Infof("Waiting for master node... try=%03d", retryCount)
@@ -308,6 +310,7 @@ func (api *ApplicationAPI) initFirstMasterNode(ctx context.Context) error { //no
 		if retryCount > 0 {
 			utils.SleepContext(ctx, config.Get().MasterServers.WaitTimeInRetry)
 		}
+
 		retryCount++
 
 		log.Infof("Waiting for master node... try=%03d", retryCount)

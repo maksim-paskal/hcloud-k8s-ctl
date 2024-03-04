@@ -99,6 +99,7 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 			}
 
 			config.SetBranch(os.Getenv("GIT_BRANCH"))
+
 			config.Get().Deployments = extraDeployments
 			config.Get().KubeConfigPath = tmpFile.Name()
 
@@ -112,12 +113,14 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 			utils.SleepContext(ctx, 10*time.Second)
 
 			t.Log("Creating cluster...")
+
 			if err := applicationAPI.NewCluster(ctx); err != nil {
 				t.Fatal(err)
 			}
 
 			// test kuberentes cluster
 			t.Log("Test kubernetes cluster...")
+
 			if err := testKubernetesCluster(ctx, t, config.Get().KubeConfigPath); err != nil {
 				t.Fatal(err)
 			}
@@ -133,6 +136,7 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 			}
 
 			t.Log("Patch cluster...")
+
 			if err := applicationAPI.PatchClusterDeployment(ctx); err != nil {
 				t.Fatal(err)
 			}
@@ -142,6 +146,7 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 
 			// test kuberentes cluster after patching
 			t.Log("Test kubernetes cluster...")
+
 			if err := testKubernetesCluster(ctx, t, config.Get().KubeConfigPath); err != nil {
 				t.Fatal(err)
 			}
