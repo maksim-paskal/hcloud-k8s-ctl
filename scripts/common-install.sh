@@ -93,13 +93,25 @@ echo LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tCgptUUlOQkZpdDJpb0JFQURoV3B
 | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
 # add kubernetes gpg key
-# curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | base64
-echo xsBNBGKItdQBCADWmKTNZEYWgXy73FvKFY5fRro4tGNa4Be4TZW3wZpct9Cj8EjykU7S9EPoJ3EdKpxFltHRu7QbDi6LWSNA4XxwnudQrYGxnxx6Ru1KBHFxHhLfWsvFcGMwit/znpxtIt9UzqCm2YTEW5NUnzQ4rXYqVQK2FLG4weYJ5bKwkY+ZsnRJpzxdHGJ0pBiqwkMT8bfQdJymUBown+SeuQ2HEqfjVMsIRe0dweD2PHWeWo9fTXsz1Q5abiGckyOVyoN9//DgSvLUocUcZsrWvYPaN+o8lXTO3GYFGNVsx069rxarkeCjOpiQOWrQmywXISQudcusSgmmgfsRZYW7FDBy5MQrABEBAAHNUVJhcHR1cmUgQXV0b21hdGljIFNpZ25pbmcgS2V5IChjbG91ZC1yYXB0dXJlLXNpZ25pbmcta2V5LTIwMjItMDMtMDctMDhfMDFfMDEucHViKcLAYgQTAQgAFgUCYoi11AkQtT3IDRPt7wUCGwMCGQEAAMGoCAB8QBNIIN3Q2D3aahrfkb6axd55zOwR0tnriuJRoPHoNuorOpCv9aWMMvQACNWkxsvJxEF8OUbzhSYjAR534RDigjTetjK2i2wKLz/kJjZbuF4ZXMynCm40eVm1XZqU63U9XR2RxmXppyNpMqQO9LrzGEnNJuh23icaZY6no12axymxcle/+SCmda8oDAfa0iyA2iyg/eU05buZv54MC6RB13QtS+8vOrKDGr7RYp/VYvQzYWm+ck6DvlaVX6VB51BkLl23SQknyZIJBVPm8ttU65EyrrgG1jLLHFXDUqJ/RpNKq+PCzWiyt4uy3AfXK89RczLu3uxiD0CQI0T31u/IzsBNBGKItdQBCADIMMJdRcg0Phv7+CrZz3xRE8Fbz8AN+YCLigQeH0B9lijxkjAFr+thB0IrOu7ruwNY+mvdP6dAewUur+pJaIjEe+4s8JBEFb4BxJfBBPuEbGSxbi4OPEJuwT53TMJMEs7+gIxCCmwioTggTBp6JzDsT/cdBeyWCusCQwDWpqoYCoUWJLrUQ6dOlI7s6p+iIUNIamtyBCwb4izs27HdEpX8gvO9rEdtcb7399HyO3oD4gHgcuFiuZTpvWHdn9WYwPGM6npJNG7crtLnctTR0cP9KutSPNzpySeAniHx8L9ebdD9tNPCWC+OtOcGRrcBeEznkYh1C4kzdP1ORm5upnknABEBAAHCwF8EGAEIABMFAmKItdQJELU9yA0T7e8FAhsMAABJmAgAhRPk/dFj71bU/UTXrkEkZZzE9JzUgan/ttyRrV6QbFZABByf4pYjBj+yLKw3280//JWurKox2uzEq1hdXPedRHICRuh1Fjd00otaQ+wGF3kY74zlWivB6Wp6tnL9STQ1oVYBUv7HhSHoJ5shELyedxxHxurUgFAD+pbFXIiK8cnAHfXTJMcrmPpC+YWEC/DeqIyEcNPkzRhtRSuERXcq1n+KJvMUAKMD/tezwvujzBaaSWapmdnGmtRjjL7IxUeGamVWOwLQbUr+34MwzdeJdcL8fav5LA8Uk0ulyeXdwiAK8FKQsixI+xZvz7HUs8ln4pZwGw/TpvO9cMkHogtgzQ== \
+# curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | base64
+echo LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tClZlcnNpb246IEdudVBHIHYyLjAuMTUgKEdOVS9MaW51eCkKCm1RRU5CR01Ib1hjQkNBRHVrR09FUXlsZVZpT2d0a01WYTdoS2lmUDZQT0NUaCs5OHhOVzRUZkhLL25CSk4yc20KdTRYYWlVbXRCOVV1R3Q5amw4VnhRZzRoT01SZjQwY29Jd0hzTnd0U3JjMlI5djVLZ3B2Y3Y1MzdRVklpZ1ZISApXTU52WGVvWmtrb0RJVWxqdmJDRURXYUVoUzlSNU9NWUtkNEFhSitmMWM4T0VMaEVjVjJkQVFMTHlqdG5FYUYvCnFtUkVOKzNZOSs1VmNSWnZRSGV5QnhDRytoZFVHRTc0MGl4Z25ZMmdTcVovSjRZZVFudFE2cE1VRWhUNnBiYUUKMTBxMkhVaWVyai9pbTBWK1pVZENoNDZMay9SZGZhNVpLbHFZT2lBMmlOMWNvRFBJZHlxS2F2Y2RmUHFTcmFLRgpMYW4yS0xjWmNnVHhQKzArSGZ6S2VmdkdFblphMTFjaXZiZTlBQkVCQUFHMFBtbHpkanByZFdKbGNtNWxkR1Z6CklFOUNVeUJRY205cVpXTjBJRHhwYzNZNmEzVmlaWEp1WlhSbGMwQmlkV2xzWkM1dmNHVnVjM1Z6WlM1dmNtYysKaVFFK0JCTUJDQUFvQlFKakI2RjNBaHNEQlFrRUhyQUFCZ3NKQ0FjREFnWVZDQUlKQ2dzRUZnSURBUUllQVFJWApnQUFLQ1JBalJsVGFtaWxrTmhuUkNBRHVkOWl2KzJDVXRKR3laaGhkenpkNTV3Ukt2SEdtU1k0ZUlBRUtDaG1mCjErQkh3Rm56QnpiZE50bmdsWTJ4U0FUcUtJV2lrelhJMXN0QXdpOHFSMGRLMzJDUytvZk1TNk9Va2xtMjZZZDEKakJXRmc0TENDaDhTMjFHTGN1dWRIdFc5UU5DQ2psQnlTNGd5RUorZVlUT28yZFdwODhOV0V6VlhJS1J0ZkxIVgpteUhKbnQyUUxtV09lWVRnbUN6cGVUOG9ubDJMcDE5YnJ5UkdsYStNczBBbWxDbHRQbjhqK2hQZUFERHRSMmJ2CjdjVExEaS9uQTQ2dTNTTFYxUDZ5akMxZWpPT3N3dGd4cHBUeHZMZ1luaVMyMmFTbm9xbTQ3bDExMXpaaVpLSjUKYkNtMVRoNnFKRkp3T3JHRU91M2FWMWlLYVFtTjJrNEcyRGl4c0hGQVUzWmVpUUljQkJNQkFnQUdCUUpqQjZGMwpBQW9KRU04TGtvemUxazg3M1RRUC8wdDJGL2psdExSUU1HN1ZDTHc3K3BzNUpDVzVGSXF1L1MyaTlnU2ROQTBFCjQydStMeXhqRzNZeG1Wb1ZSTXN4ZXU0a0VyeHI4YkxjQTRwNzFXL25LZXF3RjlWTHVYS2lyc0JDN3oyc3lGaUwKTmRsMEFSbkMzRU53dU1WbFNDd0pPME1NNU5pSnVMT3FPR1l5RDFYelNmbkN6a1hOMEpHQS9iZlBSUzVtUGZvVwowT0hJUlpGaHFFN0VENnd5V3BISUtUOHJYa0VTRndzelV3Vy9EN28xSGFnWDcrZHVMdDhXa3JvaEdieFRKMjE1Cllhbk9LU3F5S2QrNllHekROVW9HdU1OUFpKNXdUclRoT2tUekVGWjRIam1RMTZ3NXhtY1VJU25DWmQ0bmhzYlMKcU4vVXlWOVZ1M2xua2F1dFMxNUU0Q2NqUDFSUnpTa1QwamthNjJ2UHRBencrUGlHcnlNMUY3c3Z1UmFFbkpENQpHWHpqOVJDVWFSNnZ0RlZ2cXFvNGZ2YkE5OWs0WFhqK2RGQVhXMFRSWi9nMlFNZVBXOWNkV2llbGNyK3ZIRjRaCjJFbnNBbWR2RjdyNWUySkNPVTNOOE9Vb2RlYlU2d3M0VmdSVkc5Z3B0UWdmTVIwdmNpQmJOREcyWHVrMVdEazEKcXRzY2JmbTVGVkwzNm83ZGtqQTB4K1RZQ3RxWklyNHgzbW1mQVlGVXF6eHBmeVhiU0hxVUpSMkNvV3hseXo3MgpYbko3VUVvLzBVYmd6R3pzY3hMUER5SkhNTTVEbi9OaTlGVlRWS2xBTEhuRk9ZWVNUbHVvWUFDRjFETXQ3TkozCm95QTBNRUxMMEpRekVpbml4cXhwWjF0YU9tVlIvOHBRVnJxc3Rxd3FzcDNSQUJhZVo4MEpiaWdVQzI5ekpVVmYKPUY0RVgKLS0tLS1FTkQgUEdQIFBVQkxJQyBLRVkgQkxPQ0stLS0tLQo= \
 | base64 -d \
 | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
 
-cat <<EOF >/etc/apt/sources.list.d/kubernetes.list
-deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.25.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.25/deb/ /
+EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.26.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.26/deb/ /
+EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.27.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.27/deb/ /
+EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.28.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
+EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.29.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /
 EOF
 cat <<EOF >/etc/apt/sources.list.d/docker.list
 deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable
@@ -190,7 +202,7 @@ EOF
 sysctl -p
 
 apt-mark unhold kubelet kubeadm kubectl
-apt-get install -y kubelet=${KUBERNETES_VERSION}-00 kubeadm=${KUBERNETES_VERSION}-00 kubectl=${KUBERNETES_VERSION}-00
+apt-get install -y kubelet=${KUBERNETES_VERSION}-1.1 kubeadm=${KUBERNETES_VERSION}-1.1 kubectl=${KUBERNETES_VERSION}-1.1
 apt-mark hold kubelet kubeadm kubectl
 
 # stop all services
@@ -249,7 +261,7 @@ providerID: "hcloud://$INSTANCE_ID"
 runtimeRequestTimeout: "15m"
 EOF
 
-cat <<EOF | tee /etc/default/kubelet
+cat <<EOF | tee /etc/sysconfig/kubelet
 KUBELET_CONFIG_ARGS=--config=/etc/kubernetes/kubelet/config.yaml
 KUBELET_EXTRA_ARGS=--cloud-provider=external --node-ip=$INTERNAL_IP --v=2
 EOF
