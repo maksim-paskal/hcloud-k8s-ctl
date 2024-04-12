@@ -59,8 +59,7 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 		os.Exit(1)
 	}()
 
-	for _, test := range tests { //nolint:paralleltest
-		testFile := test
+	for _, testFile := range tests { //nolint:paralleltest
 		testName := filepath.Base(testFile)
 
 		if ctx.Err() != nil {
