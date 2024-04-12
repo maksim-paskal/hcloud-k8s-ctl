@@ -264,10 +264,13 @@ providerID: "hcloud://$INSTANCE_ID"
 runtimeRequestTimeout: "15m"
 EOF
 
-cat <<EOF | tee /etc/sysconfig/kubelet
+cat <<EOF | tee /etc/default/kubelet
 KUBELET_CONFIG_ARGS=--config=/etc/kubernetes/kubelet/config.yaml
 KUBELET_EXTRA_ARGS=--cloud-provider=external --node-ip=$INTERNAL_IP --v=2
 EOF
+
+# some UBUNTU installations use /etc/sysconfig/kubelet
+cp /etc/default/kubelet /etc/sysconfig/kubelet
 
 apt -y autoremove
 apt -y autoclean
