@@ -30,6 +30,9 @@ export HOME=/root/
 # uninstall old versions if exists
 dpkg --purge docker docker-engine docker.io containerd runc
 
+# remove old kubernetes sources
+rm -rf /etc/apt/sources.list.d/kubernetes.list
+
 apt update
 apt install -y \
 apt-transport-https \
@@ -85,9 +88,6 @@ systemctl disable rpcbind.service rpcbind.socket rpcbind.target
 mkdir -p /etc/apt/keyrings
 
 rm -rf /usr/share/keyrings/docker-archive-keyring.gpg /usr/share/keyrings/kubernetes-archive-keyring.gpg
-
-# remove old kubernetes sources
-rm -rf /etc/apt/sources.list.d/kubernetes.list
 
 # add docker gpg key
 # curl -fsSL https://download.docker.com/linux/ubuntu/gpg | base64
