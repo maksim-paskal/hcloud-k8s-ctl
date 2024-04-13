@@ -221,7 +221,7 @@ nameserver 185.12.64.1
 nameserver 185.12.64.2
 EOF
 
-INSTANCE_ID=$(curl http://169.254.169.254/hetzner/v1/metadata/instance-id)
+: ${INSTANCE_ID=$(curl http://169.254.169.254/hetzner/v1/metadata/instance-id)}
 
 # kubeadm config print init-defaults --component-configs KubeletConfiguration
 cat <<EOF | tee /etc/kubernetes/kubelet/config.yaml
