@@ -3,17 +3,10 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   ubuntu:
-    architecture: arm
+    version: ubuntu-22.04
   kubernetes:
     version: 1.28.2
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     version: 1.6.24-1
-masterServers:
-  servertype: cax11
-cluster-autoscaler:
-  autoscalingGroups:
-  - name: CAX41:FSN1:cax-fsn1
-    minSize: 1
-    maxSize: 20

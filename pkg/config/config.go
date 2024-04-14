@@ -207,7 +207,7 @@ func defaultConfig() Type {
 				Version: "1.28.2",
 			},
 			Docker: serverComponentDocker{
-				Version: "5:24.0.6-1~ubuntu.20.04~focal",
+				Version: "5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
 			},
 			Containerd: serverComponentContainerd{
 				Version:        "1.6.24-1",
