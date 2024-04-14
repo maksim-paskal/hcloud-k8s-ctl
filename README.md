@@ -68,7 +68,7 @@ serverComponents:
   docker:
     # customize apt package version for docker install
     # apt-cache madison docker-ce
-    version: 5:24.0.6-1~ubuntu.20.04~focal
+    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     # customize apt package version for containerd install
     # apt-cache madison containerd.io
@@ -107,7 +107,7 @@ serverComponents:
   kubernetes:
     version: 1.25.14
   docker:
-    version: 5:24.0.6-1~ubuntu.20.04~focal
+    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     version: 1.6.24-1
 cluster-autoscaler:
@@ -141,7 +141,7 @@ serverComponents:
   kubernetes:
     version: 1.26.9
   docker:
-    version: 5:24.0.6-1~ubuntu.20.04~focal
+    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     version: 1.6.24-1
 
@@ -156,7 +156,7 @@ serverComponents:
   kubernetes:
     version: 1.27.6
   docker:
-    version: 5:24.0.6-1~ubuntu.20.04~focal
+    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     version: 1.6.24-1
 
@@ -171,7 +171,7 @@ serverComponents:
   kubernetes:
     version: 1.28.2
   docker:
-    version: 5:24.0.6-1~ubuntu.20.04~focal
+    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     version: 1.6.24-1
 
@@ -191,7 +191,7 @@ serverComponents:
   kubernetes:
     version: 1.28.2
   docker:
-    version: 5:24.0.6-1~ubuntu.20.04~focal
+    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     version: 1.6.24-1
 cluster-autoscaler:
@@ -212,7 +212,7 @@ serverComponents:
   kubernetes:
     version: 1.28.2
   docker:
-    version: 5:24.0.6-1~ubuntu.20.04~focal
+    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     version: 1.6.24-1
 masterServers:

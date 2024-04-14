@@ -3,6 +3,7 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   ubuntu:
+    version: ubuntu-22.04
     architecture: arm
   kubernetes:
     version: 1.28.2

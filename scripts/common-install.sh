@@ -40,7 +40,8 @@ ca-certificates \
 curl \
 software-properties-common \
 nfs-common \
-linux-headers-generic
+linux-headers-generic \
+lsb-release
 
 # create new user to ssh into server
 hcloud_user="{{ .Values.serverComponents.ubuntu.username }}"
