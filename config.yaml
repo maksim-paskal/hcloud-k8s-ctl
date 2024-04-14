@@ -4,7 +4,7 @@ serverComponents:
   ubuntu:
     version: ubuntu-22.04
 # files for custom install
-masterServers:
-  serversinitparams:
-    targz: https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/prepare-to-ubuntu-22.04.tar.gz
-    folder: hcloud-k8s-ctl-prepare-to-ubuntu-22.04
+# masterServers:
+#   serversinitparams:
+#     targz: https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/prepare-to-ubuntu-22.04.tar.gz
+#     folder: hcloud-k8s-ctl-prepare-to-ubuntu-22.04
