@@ -206,7 +206,7 @@ EOF
 sysctl -p
 
 apt-mark unhold kubelet kubeadm kubectl
-apt-get install -y kubelet=${KUBERNETES_VERSION}-1.1 kubeadm=${KUBERNETES_VERSION}-1.1 kubectl=${KUBERNETES_VERSION}-1.1
+apt-get install -y kubelet=${KUBERNETES_VERSION} kubeadm=${KUBERNETES_VERSION} kubectl=${KUBERNETES_VERSION}
 apt-mark hold kubelet kubeadm kubectl
 
 # stop all services

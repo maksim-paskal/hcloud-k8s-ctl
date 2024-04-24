@@ -204,7 +204,7 @@ func defaultConfig() Type {
 				Architecture: hcloud.ArchitectureX86, // x86 or arm
 			},
 			Kubernetes: serverComponentKubernetes{
-				Version: "1.28.2",
+				Version: "1.28.2-1.1",
 			},
 			Docker: serverComponentDocker{
 				Version: "5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
