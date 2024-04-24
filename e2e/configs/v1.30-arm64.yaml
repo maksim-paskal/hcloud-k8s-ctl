@@ -1,11 +1,11 @@
-# Kubernetes v1.28 in Europe (ARM64 architecture)
+# Kubernetes v1.30 in Europe (ARM64 architecture)
 ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   ubuntu:
     architecture: arm
   kubernetes:
-    version: 1.28.2
+    version: 1.30.0
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
