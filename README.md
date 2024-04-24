@@ -98,48 +98,14 @@ preStartScript: |
 ```
 
 <!--- move_e2e_details_start -->
-<details><summary>Kubernetes v1.25 in Europe</summary>
+<details><summary>Kubernetes v1.30 in Europe</summary>
 
 ```yaml
 ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   kubernetes:
-    version: 1.25.14
-  docker:
-    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
-  containerd:
-    version: 1.6.24-1
-cluster-autoscaler:
-  replicaCount: 3
-  resources:
-    requests:
-      cpu: 100m
-      memory: 300Mi
-preStartScript: |
-  # add some custom cron job on node
-  crontab <<EOF
-  0 0 * * * /usr/bin/docker system prune -af
-  EOF
-
-  # add containerd config for some registries
-  mkdir -p /etc/containerd/certs.d/some-registry.io
-  cat > /etc/containerd/certs.d/some-registry.io/hosts.toml <<EOF
-  server = "https://some-registry.io"
-
-  [host."http://10.10.10.10:5000"]
-  capabilities = ["pull", "resolve"]
-  EOF
-```
-</details>
-<details><summary>Kubernetes v1.26 in Europe</summary>
-
-```yaml
-ipRange: "10.0.0.0/16"
-masterCount: 3
-serverComponents:
-  kubernetes:
-    version: 1.26.9
+    version: 1.30.0
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
@@ -147,14 +113,16 @@ serverComponents:
 
 ```
 </details>
-<details><summary>Kubernetes v1.27 in Europe</summary>
+<details><summary>Kubernetes v1.30 in Europe (ARM64 architecture)</summary>
 
 ```yaml
 ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
+  ubuntu:
+    version: ubuntu-22.04
   kubernetes:
-    version: 1.27.6
+    version: 1.30.0
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
@@ -162,22 +130,7 @@ serverComponents:
 
 ```
 </details>
-<details><summary>Kubernetes v1.28 in Europe</summary>
-
-```yaml
-ipRange: "10.0.0.0/16"
-masterCount: 3
-serverComponents:
-  kubernetes:
-    version: 1.28.2
-  docker:
-    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
-  containerd:
-    version: 1.6.24-1
-
-```
-</details>
-<details><summary>Kubernetes v1.28 in US East</summary>
+<details><summary>Kubernetes v1.30 in US East</summary>
 
 ```yaml
 ipRange: "10.0.0.0/16"
@@ -189,7 +142,7 @@ masterServers:
   servertype: cpx21
 serverComponents:
   kubernetes:
-    version: 1.28.2
+    version: 1.30.0
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
@@ -201,7 +154,32 @@ cluster-autoscaler:
     maxSize: 20
 ```
 </details>
-<details><summary>Kubernetes v1.28 in Europe (ARM64 architecture)</summary>
+<details><summary>Kubernetes v1.30 in Europe (ARM64 architecture)</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  ubuntu:
+    version: ubuntu-22.04
+    architecture: arm
+  kubernetes:
+    version: 1.30.0
+  docker:
+    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+  containerd:
+    version: 1.6.24-1
+masterServers:
+  servertype: cax11
+cluster-autoscaler:
+  autoscalingGroups:
+  - name: CAX41:FSN1:cax-fsn1
+    minSize: 1
+    maxSize: 20
+
+```
+</details>
+<details><summary>Kubernetes v1.30 in Europe (ARM64 architecture)</summary>
 
 ```yaml
 ipRange: "10.0.0.0/16"
@@ -210,7 +188,7 @@ serverComponents:
   ubuntu:
     architecture: arm
   kubernetes:
-    version: 1.28.2
+    version: 1.30.0
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
