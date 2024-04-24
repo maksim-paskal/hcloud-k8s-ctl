@@ -64,7 +64,7 @@ masterCount: 3
 serverComponents:
   kubernetes:
     # customize kubertenes version
-    version: 1.25.14
+    version: 1.25.14-1.1
   docker:
     # customize apt package version for docker install
     # apt-cache madison docker-ce
@@ -105,7 +105,7 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   kubernetes:
-    version: 1.25.14
+    version: 1.25.14-1.1
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
@@ -139,7 +139,7 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   kubernetes:
-    version: 1.26.9
+    version: 1.26.9-1.1
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
@@ -154,7 +154,7 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   kubernetes:
-    version: 1.27.6
+    version: 1.27.6-1.1
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
@@ -169,7 +169,7 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   kubernetes:
-    version: 1.28.2
+    version: 1.28.2-1.1
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
@@ -189,7 +189,7 @@ masterServers:
   servertype: cpx21
 serverComponents:
   kubernetes:
-    version: 1.28.2
+    version: 1.28.2-1.1
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
@@ -210,7 +210,7 @@ serverComponents:
   ubuntu:
     architecture: arm
   kubernetes:
-    version: 1.28.2
+    version: 1.28.2-1.1
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
