@@ -1,20 +1,22 @@
-# Kubernetes v1.28 in Europe (ARM64 architecture)
 ipRange: "10.0.0.0/16"
 masterCount: 3
+networkZone: us-east
+location: ash
+datacenter: ash-dc1
+masterServers:
+  servertype: cpx21
 serverComponents:
   ubuntu:
     version: ubuntu-22.04
-    architecture: arm
+    architecture: x86
   kubernetes:
     version: 1.28.2-1.1
   docker:
     version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
     version: 1.6.24-1
-masterServers:
-  servertype: cax11
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CAX41:FSN1:cax-fsn1
+  - name: CPX51:ASH:cpx51-ash
     minSize: 1
     maxSize: 20
