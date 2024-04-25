@@ -13,6 +13,7 @@ limitations under the License.
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,7 +28,8 @@ func main() {
 }
 
 type ReadmeExample struct {
-	raw string
+	filename []string
+	raw      string
 }
 
 func (e *ReadmeExample) GetHeader() string {
@@ -35,7 +37,12 @@ func (e *ReadmeExample) GetHeader() string {
 }
 
 func (e *ReadmeExample) GetFormattedHeader() string {
-	return strings.TrimPrefix(e.GetHeader(), "# ")
+	return fmt.Sprintf("Kubernetes: %s, Arch: %s, Ubuntu: %s, Region: %s",
+		e.filename[0],
+		e.filename[1],
+		e.filename[3],
+		e.filename[4],
+	)
 }
 
 func (e *ReadmeExample) GetContent() string {
@@ -60,7 +67,14 @@ func updateReadme() error {
 			return errors.Wrap(err, "os.ReadFile")
 		}
 
-		article := &ReadmeExample{raw: string(fileContent)}
+		article := &ReadmeExample{
+			filename: strings.Split(filepath.Base(strings.TrimSuffix(file, ".yaml")), "-"),
+			raw:      string(fileContent),
+		}
+
+		if len(article.filename) < 5 { //nolint:gomnd
+			return errors.Errorf("invalid file name %s, format (k8s_version-arch-ubuntu_version-region)", file)
+		}
 
 		b.WriteString("<details>")
 		b.WriteString("<summary>")
