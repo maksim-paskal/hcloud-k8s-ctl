@@ -28,7 +28,7 @@ spec:
     spec:
       nodeSelector:
         topology.kubernetes.io/region: {{ $location }}
-        node.kubernetes.io/instance-type: cx21
+        node.kubernetes.io/instance-type: cx22
       volumes:
       - name: my-csi-volume
         persistentVolumeClaim:

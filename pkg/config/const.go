@@ -23,7 +23,7 @@ const (
 	secretString                = "<secret>"
 	defaultLocation             = hcloudLocationEUFalkenstein
 	defaultDatacenter           = hcloudLocationEUFalkenstein + "-dc14"
-	defaultAutoscalerInstances  = "cx21,cpx21,cx31,cpx31,cx41,cpx41,cx51,cpx51"
+	defaultAutoscalerInstances  = "cx22,cpx21,cx32,cpx31,cx42,cpx41,cx52,cpx51"
 	hcloudLocationEUFalkenstein = "fsn1"
 	hcloudLocationEUNuremberg   = "nbg1"
 	hcloudLocationEUHelsinki    = "hel1"
