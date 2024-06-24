@@ -137,7 +137,7 @@ func getInterruptionContext() context.Context {
 		cancel()
 
 		// wait 5s for graceful shutdown
-		time.Sleep(5 * time.Second) //nolint:gomnd
+		time.Sleep(5 * time.Second) //nolint:mnd
 
 		os.Exit(1)
 	}()

@@ -34,7 +34,7 @@ type ClusterDrainer struct {
 func NewClusterDrainer(hcloudClient *hcloud.Client) *ClusterDrainer {
 	return &ClusterDrainer{
 		hcloudClient: hcloudClient,
-		WaitTime:     3 * time.Second, //nolint:gomnd
+		WaitTime:     3 * time.Second, //nolint:mnd
 	}
 }
 
