@@ -2,25 +2,13 @@ run:
   timeout: 5m
 issues:
   fix: true
-misspell:
-  locale: US
 linters:
   enable-all: true
   disable:
-  # deprecated
-  - maligned
-  - varcheck
-  - scopelint
-  - ifshort
-  - interfacer
-  - structcheck
-  - nosnakecase
-  - golint
-  - deadcode
-  ############
-  - exhaustivestruct
+  - execinquery
   - exhaustruct
   - varnamelen
   - musttag
   - depguard
   - gochecknoglobals
+  - gomnd

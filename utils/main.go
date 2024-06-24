@@ -72,7 +72,7 @@ func updateReadme() error {
 			raw:      string(fileContent),
 		}
 
-		if len(article.filename) < 5 { //nolint:gomnd
+		if len(article.filename) < 5 { //nolint:mnd
 			return errors.Errorf("invalid file name %s, format (k8s_version-arch-ubuntu_version-region)", file)
 		}
 
@@ -105,7 +105,7 @@ func updateReadme() error {
 	readmeContent = readmeContent[0:sPosition] + readmeContent[ePosition:]
 	readmeContent = strings.ReplaceAll(readmeContent, endMarker, startMarker+"\n"+b.String()+"\n"+endMarker)
 
-	if err := os.WriteFile("README.md", []byte(readmeContent), 0o644); err != nil { //nolint:gomnd,gosec
+	if err := os.WriteFile("README.md", []byte(readmeContent), 0o644); err != nil { //nolint:mnd,gosec
 		return errors.Wrap(err, "os.WriteFile")
 	}
 

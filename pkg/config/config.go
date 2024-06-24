@@ -321,7 +321,7 @@ func hideSensitiveData(out []byte, sensitive string) []byte {
 func String() string {
 	var b bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&b)
-	yamlEncoder.SetIndent(2) //nolint:gomnd
+	yamlEncoder.SetIndent(2) //nolint:mnd
 
 	if err := yamlEncoder.Encode(&config); err != nil {
 		return fmt.Sprintf("ERROR %s", err)
