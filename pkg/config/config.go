@@ -228,7 +228,7 @@ func defaultConfig() Type {
 		MasterServers: masterServers{
 			NamePattern:        "master-%d",
 			PlacementGroupName: "master-placement-group",
-			ServerType:         "cx21",
+			ServerType:         "cx22",
 			Labels:             serverLabels,
 			WaitTimeInRetry:    waitTimeInRetry,
 			RetryTimeLimit:     retryTimeLimit,
