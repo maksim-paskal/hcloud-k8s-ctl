@@ -272,7 +272,8 @@ KUBELET_EXTRA_ARGS=--cloud-provider=external --node-ip=$INTERNAL_IP --v=2
 EOF
 
 # some UBUNTU installations use /etc/sysconfig/kubelet
-cp /etc/default/kubelet /etc/sysconfig/kubelet
+# latest ubuntu versions use /etc/default/kubelet
+cp /etc/default/kubelet /etc/sysconfig/kubelet || true
 
 apt -y autoremove
 apt -y autoclean
