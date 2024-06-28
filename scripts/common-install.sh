@@ -77,7 +77,7 @@ EOF
 
 # restart sshd to apply new config
 sshd -t
-systemctl restart sshd.service
+systemctl restart ssh.service
 
 # disable swap
 swapoff -a
