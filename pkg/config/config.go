@@ -199,7 +199,7 @@ func defaultConfig() Type {
 		HetznerToken: os.Getenv("HCLOUD_TOKEN"),
 		ServerComponents: serverComponents{
 			Ubuntu: serverComponentUbuntu{
-				Version:      "ubuntu-20.04",
+				Version:      "ubuntu-22.04",
 				UserName:     "hcloud-user",
 				Architecture: hcloud.ArchitectureX86, // x86 or arm
 			},

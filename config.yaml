@@ -2,7 +2,7 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 serverComponents:
   ubuntu:
-    version: ubuntu-24.04
+    version: ubuntu-22.04
 # files for custom install
 # masterServers:
 #   serversinitparams:

@@ -1,7 +1,7 @@
 clusterName: k8s
 serverComponents:
   ubuntu:
-    version: ubuntu-24.04
+    version: ubuntu-20.04
     username: hcloud-user
     architecture: x86
   kubernetes:
