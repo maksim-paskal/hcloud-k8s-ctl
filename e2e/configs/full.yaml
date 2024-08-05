@@ -1,7 +1,7 @@
 clusterName: k8s
 serverComponents:
   ubuntu:
-    version: ubuntu-20.04
+    version: ubuntu-22.04
     username: hcloud-user
     architecture: x86
   kubernetes:
@@ -50,22 +50,25 @@ preStartScript: ""
 postStartScript: ""
 cluster-autoscaler:
   autoscalingGroups:
-    - name: CX22:FSN1:cx22-fsn1
+    - name: CPX11:FSN1:cpx11-fsn1
       minSize: 0
       maxSize: 20
     - name: CPX21:FSN1:cpx21-fsn1
       minSize: 0
       maxSize: 20
-    - name: CX32:FSN1:cx32-fsn1
+    - name: CX22:FSN1:cx22-fsn1
       minSize: 0
       maxSize: 20
     - name: CPX31:FSN1:cpx31-fsn1
       minSize: 0
       maxSize: 20
-    - name: CX42:FSN1:cx42-fsn1
+    - name: CX32:FSN1:cx32-fsn1
       minSize: 0
       maxSize: 20
     - name: CPX41:FSN1:cpx41-fsn1
+      minSize: 0
+      maxSize: 20
+    - name: CX42:FSN1:cx42-fsn1
       minSize: 0
       maxSize: 20
     - name: CX52:FSN1:cx52-fsn1
@@ -74,22 +77,25 @@ cluster-autoscaler:
     - name: CPX51:FSN1:cpx51-fsn1
       minSize: 0
       maxSize: 20
-    - name: CX22:NBG1:cx22-nbg1
+    - name: CPX11:NBG1:cpx11-nbg1
       minSize: 0
       maxSize: 20
     - name: CPX21:NBG1:cpx21-nbg1
       minSize: 0
       maxSize: 20
-    - name: CX32:NBG1:cx32-nbg1
+    - name: CX22:NBG1:cx22-nbg1
       minSize: 0
       maxSize: 20
     - name: CPX31:NBG1:cpx31-nbg1
       minSize: 0
       maxSize: 20
-    - name: CX42:NBG1:cx42-nbg1
+    - name: CX32:NBG1:cx32-nbg1
       minSize: 0
       maxSize: 20
     - name: CPX41:NBG1:cpx41-nbg1
+      minSize: 0
+      maxSize: 20
+    - name: CX42:NBG1:cx42-nbg1
       minSize: 0
       maxSize: 20
     - name: CX52:NBG1:cx52-nbg1
@@ -98,22 +104,25 @@ cluster-autoscaler:
     - name: CPX51:NBG1:cpx51-nbg1
       minSize: 0
       maxSize: 20
-    - name: CX22:HEL1:cx22-hel1
+    - name: CPX11:HEL1:cpx11-hel1
       minSize: 0
       maxSize: 20
     - name: CPX21:HEL1:cpx21-hel1
       minSize: 0
       maxSize: 20
-    - name: CX32:HEL1:cx32-hel1
+    - name: CX22:HEL1:cx22-hel1
       minSize: 0
       maxSize: 20
     - name: CPX31:HEL1:cpx31-hel1
       minSize: 0
       maxSize: 20
-    - name: CX42:HEL1:cx42-hel1
+    - name: CX32:HEL1:cx32-hel1
       minSize: 0
       maxSize: 20
     - name: CPX41:HEL1:cpx41-hel1
+      minSize: 0
+      maxSize: 20
+    - name: CX42:HEL1:cx42-hel1
       minSize: 0
       maxSize: 20
     - name: CX52:HEL1:cx52-hel1
