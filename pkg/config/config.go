@@ -114,6 +114,10 @@ func getDefaultClusterAutoscaler() map[interface{}]interface{} {
 	}
 	defaultServers := strings.Split(defaultAutoscalerInstances, ",")
 
+	if instances := os.Getenv("AUTOSCALER_INSTANCES"); len(instances) > 0 {
+		defaultServers = append(defaultServers, strings.Split(instances, ",")...)
+	}
+
 	for _, location := range defaultLocations {
 		for _, server := range defaultServers {
 			result = append(result, &clusterAutoscalingGroup{
