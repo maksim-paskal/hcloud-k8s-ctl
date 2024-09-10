@@ -53,8 +53,8 @@ test-kubernetes-yaml:
 	helm dep up ./scripts/chart
 	helm lint ./scripts/chart --values=$(fullConfig)
 	helm lint ./examples/charts/test --values=$(fullConfig)
-	helm template ./scripts/chart --values=$(fullConfig) | kubectl apply --dry-run=client --validate=true -f -
-	helm template ./examples/charts/test --values=$(fullConfig) | kubectl apply --dry-run=client --validate=true -f -
+	helm template ./scripts/chart --values=$(fullConfig) | kubectl apply --dry-run=server --validate=true -f -
+	helm template ./examples/charts/test --values=$(fullConfig) | kubectl apply --dry-run=server --validate=true -f -
 install:
 	go run github.com/goreleaser/goreleaser@latest build \
 	--single-target \
