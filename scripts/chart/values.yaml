@@ -1,7 +1,4 @@
-hetznerToken:
-  main: some-token-string
-  csi: null
-  ccm: null
+hetznerToken: "some-token-string"
 clusterName: k8s
 location: nbg1
 deployments:
@@ -9,6 +6,9 @@ deployments:
     server:
       enabled: false
       clusterIP: 10.100.0.100
+      nodeSelector: {}
+      tolerations: []
+      affinity: {}
     nfs-subdir-external-provisioner:
       enabled: false
   registry:
