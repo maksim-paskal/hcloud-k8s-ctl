@@ -35,7 +35,6 @@ spec:
         app: nfs-server
     spec:
       priorityClassName: system-cluster-critical
-      containers:
 {{ if .Values.deployments.nfs.server.affinity }}
       affinity:
 {{ toYaml .Values.deployments.nfs.server.affinity | indent 8 }}
@@ -48,6 +47,7 @@ spec:
       tolerations:
 {{ toYaml .Values.deployments.nfs.server.tolerations | indent 6 }}
 {{ end }}
+      containers:
       - name: nfs-server
         # git clone git@github.com:sjiveson/nfs-server-alpine.git
         # cd nfs-server-alpine
