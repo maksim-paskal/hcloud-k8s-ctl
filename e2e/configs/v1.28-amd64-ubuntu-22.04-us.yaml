@@ -17,6 +17,8 @@ serverComponents:
     version: 1.6.24-1
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CPX51:ASH:cpx51-ash
+  - name: cpx51-ash
     minSize: 1
     maxSize: 20
+    instanceType: cpx51
+    region: ash

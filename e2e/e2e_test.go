@@ -40,7 +40,16 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 
 	log.SetLevel(log.WarnLevel)
 
-	tests, err := filepath.Glob("./configs/*.yaml")
+	if os.Getenv("DEBUG") == "true" {
+		log.SetLevel(log.DebugLevel)
+	}
+
+	nameGlob := os.Getenv("E2E_FILE_NAME")
+	if nameGlob == "" {
+		nameGlob = "*"
+	}
+
+	tests, err := filepath.Glob("./configs/" + nameGlob + ".yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +106,8 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 				},
 			}
 
-			config.SetBranch(os.Getenv("GIT_BRANCH"))
+			// ignore branch in config, set it to current
+			config.SetServersInitParams()
 
 			config.Get().Deployments = extraDeployments
 			config.Get().KubeConfigPath = tmpFile.Name()

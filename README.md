@@ -24,7 +24,7 @@ for other OS download binnary from [release pages](https://github.com/maksim-pas
 
 This will create kubernetes cluster in Hetzner Cloud Europe region with 3 instances, 1 load balancer for the kubernetes control plane and 1 kubernetes worker node, after successful installation the cluster will have:
 
-- [Kubernetes v1.29](https://github.com/kubernetes/kubernetes)
+- [Kubernetes v1.30](https://github.com/kubernetes/kubernetes)
 - [Kubernetes Autoscaler](https://github.com/kubernetes/autoscaler)
 - [Flannel](https://github.com/flannel-io/flannel)
 - [Kubernetes Cloud Controller Manager for Hetzner Cloud](https://github.com/hetznercloud/hcloud-cloud-controller-manager)
@@ -39,55 +39,55 @@ for HA needs odd number of master nodes (minimum 3) <https://etcd.io/docs/v3.4/f
 Create a simple configuration file `config.yaml` full configuration example [here](https://github.com/maksim-paskal/hcloud-k8s-ctl/blob/main/e2e/configs/full.yaml)
 
 ```yaml
-# kubeconfig path
+# Kubeconfig path
 kubeConfigPath: ~/.kube/hcloud
-# Hetzner cloud internal network CIDR
+# Hetzner Cloud internal network CIDR
 ipRange: "10.0.0.0/16"
-# servers for kubernetes master (recommended 3)
-# for development purposes cluster can have 1 master node  
-# in this case cluster will be created without load balancer and pods can schedule on master
+# Servers for Kubernetes master (recommended 3)
+# For development purposes, the cluster can have 1 master node  
+# In this case, the cluster will be created without a load balancer, and pods can be scheduled on the master
 masterCount: 3
 ```
 
 customize configuration file for your needs
 
 ```yaml
-# kubeconfig path
+# Kubeconfig path
 kubeConfigPath: ~/.kube/hcloud
-# Hetzner cloud internal network CIDR
+# Hetzner Cloud internal network CIDR
 ipRange: "10.0.0.0/16"
-# servers for kubernetes master (recommended 3)
-# for development purposes cluster can have 1 master node  
-# in this case cluster will be created without load balancer and pods can schedule on master
+# Servers for Kubernetes master (recommended 3)
+# For development purposes, the cluster can have 1 master node  
+# In this case, the cluster will be created without a load balancer, and pods can be scheduled on the master
 masterCount: 3
-# server components for all nodes in cluster
+# Server components for all nodes in the cluster
 serverComponents:
   kubernetes:
-    # customize kubertenes version
-    version: 1.29.3-1.1
+    # Customize Kubernetes version
+    version: 1.30.5-1.1
   docker:
-    # customize apt package version for docker install
+    # Customize apt package version for Docker install
     # apt-cache madison docker-ce
-    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+    version: 5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
-    # customize apt package version for containerd install
+    # Customize apt package version for containerd install
     # apt-cache madison containerd.io
-    version: 1.6.24-1
-# add autoscaler chart extra values
+    version: 1.7.22-1
+# Add autoscaler chart extra values
 cluster-autoscaler:
   replicaCount: 3
   resources:
     requests:
       cpu: 200m
       memory: 300Mi
-# add some custom script for all nodes in cluster
+# Add a custom script for all nodes in the cluster
 preStartScript: |
-  # add some custom cron job on node
+  # Add a custom cron job on the node
   crontab <<EOF
   0 0 * * * /usr/bin/docker system prune -af
   EOF
 
-  # add containerd config for some registries
+  # Add containerd config for some registries
   mkdir -p /etc/containerd/certs.d/some-registry.io
   cat > /etc/containerd/certs.d/some-registry.io/hosts.toml <<EOF
   server = "https://some-registry.io"
@@ -153,9 +153,11 @@ serverComponents:
     version: 1.6.24-1
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CPX51:ASH:cpx51-ash
+  - name: cpx51-ash
     minSize: 1
     maxSize: 20
+    instanceType: cpx51
+    region: ash
 ```
 </details>
 <details><summary>Kubernetes: v1.28, Arch: arm64, Ubuntu: 20.04, Region: eu</summary>
@@ -176,9 +178,11 @@ masterServers:
   servertype: cax11
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CAX41:FSN1:cax-fsn1
+  - name: cax-fsn1
     minSize: 1
     maxSize: 20
+    instanceType: cax41
+    region: fsn1
 
 ```
 </details>
@@ -200,9 +204,11 @@ masterServers:
   servertype: cax11
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CAX41:FSN1:cax-fsn1
+  - name: cax-fsn1
     minSize: 1
     maxSize: 20
+    instanceType: cax41
+    region: fsn1
 ```
 </details>
 <details><summary>Kubernetes: v1.29, Arch: amd64, Ubuntu: 20.04, Region: eu</summary>
@@ -260,9 +266,11 @@ serverComponents:
     version: 1.6.24-1
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CPX51:ASH:cpx51-ash
+  - name: cpx51-ash
     minSize: 1
     maxSize: 20
+    instanceType: cpx51
+    region: ash
 ```
 </details>
 <details><summary>Kubernetes: v1.29, Arch: arm64, Ubuntu: 20.04, Region: eu</summary>
@@ -283,9 +291,11 @@ masterServers:
   servertype: cax11
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CAX41:FSN1:cax-fsn1
+  - name: cax-fsn1
     minSize: 1
     maxSize: 20
+    instanceType: cax41
+    region: fsn1
 
 ```
 </details>
@@ -307,9 +317,129 @@ masterServers:
   servertype: cax11
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CAX41:FSN1:cax-fsn1
+  - name: cax-fsn1
     minSize: 1
     maxSize: 20
+    instanceType: cax41
+    region: fsn1
+```
+</details>
+<details><summary>Kubernetes: v1.30, Arch: amd64, Ubuntu: 20.04, Region: eu</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  ubuntu:
+    version: ubuntu-20.04
+    architecture: x86
+  kubernetes:
+    version: 1.30.5-1.1
+  docker:
+    version: 5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+  containerd:
+    version: 1.7.22-1
+
+```
+</details>
+<details><summary>Kubernetes: v1.30, Arch: amd64, Ubuntu: 20.04, Region: us</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+networkZone: us-east
+location: ash
+datacenter: ash-dc1
+masterServers:
+  servertype: cpx21
+serverComponents:
+  ubuntu:
+    version: ubuntu-20.04
+    architecture: x86
+  kubernetes:
+    version: 1.30.5-1.1
+  docker:
+    version: 5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+  containerd:
+    version: 1.7.22-1
+cluster-autoscaler:
+  autoscalingGroups:
+  - name: cpx51-ash
+    minSize: 1
+    maxSize: 20
+    instanceType: cpx51
+    region: ash
+```
+</details>
+<details><summary>Kubernetes: v1.30, Arch: amd64, Ubuntu: 22.04, Region: eu</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  ubuntu:
+    version: ubuntu-22.04
+    architecture: x86
+  kubernetes:
+    version: 1.30.5-1.1
+  docker:
+    version: 5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+  containerd:
+    version: 1.7.22-1
+
+```
+</details>
+<details><summary>Kubernetes: v1.30, Arch: arm64, Ubuntu: 20.04, Region: eu</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  ubuntu:
+    version: ubuntu-20.04
+    architecture: arm
+  kubernetes:
+    version: 1.30.5-1.1
+  docker:
+    version: 5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+  containerd:
+    version: 1.7.22-1
+masterServers:
+  servertype: cax11
+cluster-autoscaler:
+  autoscalingGroups:
+  - name: cax-fsn1
+    minSize: 1
+    maxSize: 20
+    instanceType: cax41
+    region: fsn1
+```
+</details>
+<details><summary>Kubernetes: v1.30, Arch: arm64, Ubuntu: 22.04, Region: eu</summary>
+
+```yaml
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  ubuntu:
+    version: ubuntu-22.04
+    architecture: arm
+  kubernetes:
+    version: 1.30.5-1.1
+  docker:
+    version: 5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+  containerd:
+    version: 1.7.22-1
+masterServers:
+  servertype: cax11
+cluster-autoscaler:
+  autoscalingGroups:
+  - name: cax-fsn1
+    minSize: 1
+    maxSize: 20
+    instanceType: cax41
+    region: fsn1
+
 ```
 </details>
 

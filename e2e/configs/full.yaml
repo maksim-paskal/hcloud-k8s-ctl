@@ -5,11 +5,11 @@ serverComponents:
     username: hcloud-user
     architecture: x86
   kubernetes:
-    version: 1.29.3-1.1
+    version: 1.30.5-1.1
   docker:
-    version: 5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+    version: 5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
-    version: 1.6.24-1
+    version: 1.7.22-1
     pausecontainer: registry.k8s.io/pause:3.2
 ipRange: 10.0.0.0/16
 ipRangeSubnet: 10.0.0.0/16
@@ -50,84 +50,138 @@ preStartScript: ""
 postStartScript: ""
 cluster-autoscaler:
   autoscalingGroups:
-    - name: CPX11:FSN1:cpx11-fsn1
+    - name: cpx11-fsn1
       minSize: 0
       maxSize: 20
-    - name: CPX21:FSN1:cpx21-fsn1
+      instanceType: cpx11
+      region: fsn1
+    - name: cpx21-fsn1
       minSize: 0
       maxSize: 20
-    - name: CX22:FSN1:cx22-fsn1
+      instanceType: cpx21
+      region: fsn1
+    - name: cx22-fsn1
       minSize: 0
       maxSize: 20
-    - name: CPX31:FSN1:cpx31-fsn1
+      instanceType: cx22
+      region: fsn1
+    - name: cpx31-fsn1
       minSize: 0
       maxSize: 20
-    - name: CX32:FSN1:cx32-fsn1
+      instanceType: cpx31
+      region: fsn1
+    - name: cx32-fsn1
       minSize: 0
       maxSize: 20
-    - name: CPX41:FSN1:cpx41-fsn1
+      instanceType: cx32
+      region: fsn1
+    - name: cpx41-fsn1
       minSize: 0
       maxSize: 20
-    - name: CX42:FSN1:cx42-fsn1
+      instanceType: cpx41
+      region: fsn1
+    - name: cx42-fsn1
       minSize: 0
       maxSize: 20
-    - name: CX52:FSN1:cx52-fsn1
+      instanceType: cx42
+      region: fsn1
+    - name: cx52-fsn1
       minSize: 0
       maxSize: 20
-    - name: CPX51:FSN1:cpx51-fsn1
+      instanceType: cx52
+      region: fsn1
+    - name: cpx51-fsn1
       minSize: 0
       maxSize: 20
-    - name: CPX11:NBG1:cpx11-nbg1
+      instanceType: cpx51
+      region: fsn1
+    - name: cpx11-nbg1
       minSize: 0
       maxSize: 20
-    - name: CPX21:NBG1:cpx21-nbg1
+      instanceType: cpx11
+      region: nbg1
+    - name: cpx21-nbg1
       minSize: 0
       maxSize: 20
-    - name: CX22:NBG1:cx22-nbg1
+      instanceType: cpx21
+      region: nbg1
+    - name: cx22-nbg1
       minSize: 0
       maxSize: 20
-    - name: CPX31:NBG1:cpx31-nbg1
+      instanceType: cx22
+      region: nbg1
+    - name: cpx31-nbg1
       minSize: 0
       maxSize: 20
-    - name: CX32:NBG1:cx32-nbg1
+      instanceType: cpx31
+      region: nbg1
+    - name: cx32-nbg1
       minSize: 0
       maxSize: 20
-    - name: CPX41:NBG1:cpx41-nbg1
+      instanceType: cx32
+      region: nbg1
+    - name: cpx41-nbg1
       minSize: 0
       maxSize: 20
-    - name: CX42:NBG1:cx42-nbg1
+      instanceType: cpx41
+      region: nbg1
+    - name: cx42-nbg1
       minSize: 0
       maxSize: 20
-    - name: CX52:NBG1:cx52-nbg1
+      instanceType: cx42
+      region: nbg1
+    - name: cx52-nbg1
       minSize: 0
       maxSize: 20
-    - name: CPX51:NBG1:cpx51-nbg1
+      instanceType: cx52
+      region: nbg1
+    - name: cpx51-nbg1
       minSize: 0
       maxSize: 20
-    - name: CPX11:HEL1:cpx11-hel1
+      instanceType: cpx51
+      region: nbg1
+    - name: cpx11-hel1
       minSize: 0
       maxSize: 20
-    - name: CPX21:HEL1:cpx21-hel1
+      instanceType: cpx11
+      region: hel1
+    - name: cpx21-hel1
       minSize: 0
       maxSize: 20
-    - name: CX22:HEL1:cx22-hel1
+      instanceType: cpx21
+      region: hel1
+    - name: cx22-hel1
       minSize: 0
       maxSize: 20
-    - name: CPX31:HEL1:cpx31-hel1
+      instanceType: cx22
+      region: hel1
+    - name: cpx31-hel1
       minSize: 0
       maxSize: 20
-    - name: CX32:HEL1:cx32-hel1
+      instanceType: cpx31
+      region: hel1
+    - name: cx32-hel1
       minSize: 0
       maxSize: 20
-    - name: CPX41:HEL1:cpx41-hel1
+      instanceType: cx32
+      region: hel1
+    - name: cpx41-hel1
       minSize: 0
       maxSize: 20
-    - name: CX42:HEL1:cx42-hel1
+      instanceType: cpx41
+      region: hel1
+    - name: cx42-hel1
       minSize: 0
       maxSize: 20
-    - name: CX52:HEL1:cx52-hel1
+      instanceType: cx42
+      region: hel1
+    - name: cx52-hel1
       minSize: 0
       maxSize: 20
-    - name: CPX51:HEL1:cpx51-hel1
+      instanceType: cx52
+      region: hel1
+    - name: cpx51-hel1
       minSize: 0
       maxSize: 20
+      instanceType: cpx51
+      region: hel1

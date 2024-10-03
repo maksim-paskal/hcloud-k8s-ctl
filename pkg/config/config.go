@@ -92,12 +92,20 @@ type serverComponents struct {
 }
 
 type clusterAutoscalingGroup struct {
-	Name    string `yaml:"name"`
-	MinSize int    `yaml:"minSize"`
-	MaxSize int    `yaml:"maxSize"`
+	Name         string `yaml:"name"`
+	MinSize      int    `yaml:"minSize"`
+	MaxSize      int    `yaml:"maxSize"`
+	InstanceType string `yaml:"instanceType"`
+	Region       string `yaml:"region"`
 }
 
-func getDefaultMasterServersInitParams(branch string) masterServersInitParams {
+func getDefaultMasterServersInitParams() masterServersInitParams {
+	branch := "main"
+
+	if b := os.Getenv("HCLOUD_CTL_BRANCH"); len(b) > 0 {
+		branch = b
+	}
+
 	return masterServersInitParams{
 		TarGz:  fmt.Sprintf("https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/%s.tar.gz", branch),
 		Folder: "hcloud-k8s-ctl-" + branch,
@@ -121,15 +129,11 @@ func getDefaultClusterAutoscaler() map[interface{}]interface{} {
 	for _, location := range defaultLocations {
 		for _, server := range defaultServers {
 			result = append(result, &clusterAutoscalingGroup{
-				Name: fmt.Sprintf(
-					"%s:%s:%s-%s",
-					strings.ToUpper(server),
-					strings.ToUpper(location),
-					server,
-					location,
-				),
-				MinSize: 0,
-				MaxSize: workersCount,
+				Name:         fmt.Sprintf("%s-%s", server, location),
+				MinSize:      0,
+				MaxSize:      workersCount,
+				InstanceType: server,
+				Region:       location,
 			})
 		}
 	}
@@ -188,8 +192,8 @@ var cliArguments = cliArgs{
 	CreateFirewallWorkers:      flag.Bool("create-firewall.workers", false, "create firewall for workers"),
 }
 
-func SetBranch(branch string) {
-	config.MasterServers.ServersInitParams = getDefaultMasterServersInitParams(branch)
+func SetServersInitParams() {
+	config.MasterServers.ServersInitParams = getDefaultMasterServersInitParams()
 }
 
 func defaultConfig() Type {
@@ -208,13 +212,13 @@ func defaultConfig() Type {
 				Architecture: hcloud.ArchitectureX86, // x86 or arm
 			},
 			Kubernetes: serverComponentKubernetes{
-				Version: "1.29.3-1.1",
+				Version: "1.30.5-1.1",
 			},
 			Docker: serverComponentDocker{
-				Version: "5:24.0.6-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
+				Version: "5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
 			},
 			Containerd: serverComponentContainerd{
-				Version:        "1.6.24-1",
+				Version:        "1.7.22-1",
 				PauseContainer: "registry.k8s.io/pause:3.2",
 			},
 		},
@@ -236,7 +240,7 @@ func defaultConfig() Type {
 			Labels:             serverLabels,
 			WaitTimeInRetry:    waitTimeInRetry,
 			RetryTimeLimit:     retryTimeLimit,
-			ServersInitParams:  getDefaultMasterServersInitParams("main"),
+			ServersInitParams:  getDefaultMasterServersInitParams(),
 		},
 		MasterLoadBalancer: masterLoadBalancer{
 			LoadBalancerType: "lb11",
