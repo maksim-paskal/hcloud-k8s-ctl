@@ -14,6 +14,8 @@ masterServers:
   servertype: cax11
 cluster-autoscaler:
   autoscalingGroups:
-  - name: CAX41:FSN1:cax-fsn1
+  - name: cax-fsn1
     minSize: 1
     maxSize: 20
+    instanceType: cax41
+    region: fsn1

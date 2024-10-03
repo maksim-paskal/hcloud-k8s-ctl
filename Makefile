@@ -13,7 +13,7 @@ test:
 	CONFIG=config_test.yaml go test -race -coverprofile coverage.out ./cmd/... ./pkg/...
 .PHONY: e2e
 e2e:
-	GIT_BRANCH=$(branch) go test -v -count=1 -timeout=4h ./e2e/e2e_test.go
+	HCLOUD_CTL_BRANCH=$(branch) go test -v -count=1 -timeout=4h ./e2e/e2e_test.go
 update-readme:
 	go run ./utils/main.go
 coverage:
@@ -21,11 +21,11 @@ coverage:
 create-cluster:
 	make test
 	make delete-cluster
-	go run -race ./cmd -config=$(config) -action=create -log.level=DEBUG
+	HCLOUD_CTL_BRANCH=$(branch) go run -race ./cmd -config=$(config) -action=create -log.level=DEBUG
 delete-cluster:
 	go run -race ./cmd -config=$(config) -action=delete -log.level=DEBUG
 patch-cluster:
-	make run action=patch-cluster
+	HCLOUD_CTL_BRANCH=$(branch) make run action=patch-cluster
 list-configurations:
 	make run action=list-configurations
 upgrade-controlplane:
