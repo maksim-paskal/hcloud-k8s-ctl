@@ -40,7 +40,12 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 
 	log.SetLevel(log.WarnLevel)
 
-	tests, err := filepath.Glob("./configs/*.yaml")
+	nameGlob := os.Getenv("E2E_FILE_NAME")
+	if nameGlob == "" {
+		nameGlob = "*"
+	}
+
+	tests, err := filepath.Glob("./configs/" + nameGlob + ".yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

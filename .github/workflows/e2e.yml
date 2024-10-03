@@ -1,9 +1,13 @@
 on:
   workflow_dispatch:
     inputs:
-      token:
+      hcloud_token:
         description: 'Hetzner Cloud API token'
         required: true
+      e2e_file_name:
+        description: 'Name of the e2e tests'
+        required: false
+        default: 'v1.30*'
 
 jobs:
   e2e:
@@ -17,4 +21,5 @@ jobs:
     - run: ssh-keygen -t rsa -q -f "$HOME/.ssh/id_rsa" -N ""
     - run: make e2e branch=${{ github.base_ref || github.ref_name }}
       env:
-        HCLOUD_TOKEN: ${{ github.event.inputs.token }}
+        HCLOUD_TOKEN: ${{ github.event.inputs.hcloud_token }}
+        E2E_FILE_NAME: ${{ github.event.inputs.e2e_file_name }}
