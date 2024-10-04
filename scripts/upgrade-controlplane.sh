@@ -22,10 +22,10 @@ export INDEX=${HOSTNAME##*-}
 
 if [[ $INDEX -eq 1 ]]; then
   # update controlplane on first node
-  kubeadm upgrade apply "$(kubeadm version -o short)" -f
+  kubeadm upgrade --ignore-preflight-errors=CoreDNSUnsupportedPlugins apply "$(kubeadm version -o short)" -f
 else
   # update controlplane on other node
-  kubeadm upgrade node
+  kubeadm upgrade --ignore-preflight-errors=CoreDNSUnsupportedPlugins node
 fi
 
 systemctl restart kubelet
