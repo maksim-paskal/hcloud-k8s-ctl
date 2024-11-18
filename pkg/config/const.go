@@ -16,7 +16,6 @@ import "time"
 
 const (
 	masterServersCount          = 3
-	workersCount                = 20
 	loadBalancerDefaultPort     = 6443
 	waitTimeInRetry             = 3 * time.Second
 	retryTimeLimit              = 20

@@ -21,6 +21,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -126,12 +127,18 @@ func getDefaultClusterAutoscaler() map[interface{}]interface{} {
 		defaultServers = append(defaultServers, strings.Split(instances, ",")...)
 	}
 
+	workersMaxSize := 20
+
+	if workersCountEnv, err := strconv.Atoi(os.Getenv("AUTOSCALER_WORKERS_MAX")); err == nil && workersCountEnv > 0 {
+		workersMaxSize = workersCountEnv
+	}
+
 	for _, location := range defaultLocations {
 		for _, server := range defaultServers {
 			result = append(result, &clusterAutoscalingGroup{
 				Name:         fmt.Sprintf("%s-%s", server, location),
 				MinSize:      0,
-				MaxSize:      workersCount,
+				MaxSize:      workersMaxSize,
 				InstanceType: server,
 				Region:       location,
 			})
