@@ -7,7 +7,7 @@ on:
       e2e_file_name:
         description: 'Name of the e2e tests'
         required: false
-        default: 'v1.30*'
+        default: 'v1.31*'
       debug:
         type: choice
         description: 'Debug mode'

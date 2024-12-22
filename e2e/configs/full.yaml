@@ -5,11 +5,11 @@ serverComponents:
     username: hcloud-user
     architecture: x86
   kubernetes:
-    version: 1.30.5-1.1
+    version: 1.31.4-1.1
   docker:
-    version: 5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+    version: 5:27.4.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
   containerd:
-    version: 1.7.22-1
+    version: 1.7.24-1
     pausecontainer: registry.k8s.io/pause:3.2
 ipRange: 10.0.0.0/16
 ipRangeSubnet: 10.0.0.0/16

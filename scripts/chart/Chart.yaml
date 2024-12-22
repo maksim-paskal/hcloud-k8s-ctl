@@ -10,17 +10,17 @@ dependencies:
   version: "0.2.3"
   repository: https://postfinance.github.io/kubelet-csr-approver
 - name: hcloud-csi
-  version: "2.9.0"
+  version: "2.11.0"
   repository: https://charts.hetzner.cloud
 - name: hcloud-cloud-controller-manager
-  version: "1.20.0"
+  version: "1.21.0"
   repository: https://charts.hetzner.cloud
 - name: cluster-autoscaler
-  version: "9.43.0"
+  version: "9.43.2"
   repository: https://kubernetes.github.io/autoscaler
 - name: metrics-server
-  version: "3.12.1"
+  version: "3.12.2"
   repository: https://kubernetes-sigs.github.io/metrics-server
 - name: flannel
-  version: "v0.25.6"
+  version: "v0.26.2"
   repository: https://flannel-io.github.io/flannel

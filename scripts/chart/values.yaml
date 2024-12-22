@@ -70,6 +70,10 @@ kubelet-csr-approver:
 
 cluster-autoscaler:
   replicaCount: 2
+  image:
+    # TODO: Remove after chart will have this version
+    # https://github.com/kubernetes/autoscaler/pull/7298
+    tag: v1.31.1
   priorityClassName: system-cluster-critical
   resources:
     requests:
