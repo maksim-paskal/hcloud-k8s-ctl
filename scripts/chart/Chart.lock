@@ -7,18 +7,18 @@ dependencies:
   version: 0.2.3
 - name: hcloud-csi
   repository: https://charts.hetzner.cloud
-  version: 2.9.0
+  version: 2.11.0
 - name: hcloud-cloud-controller-manager
   repository: https://charts.hetzner.cloud
-  version: 1.20.0
+  version: 1.21.0
 - name: cluster-autoscaler
   repository: https://kubernetes.github.io/autoscaler
-  version: 9.43.0
+  version: 9.43.2
 - name: metrics-server
   repository: https://kubernetes-sigs.github.io/metrics-server
-  version: 3.12.1
+  version: 3.12.2
 - name: flannel
   repository: https://flannel-io.github.io/flannel
-  version: v0.25.6
-digest: sha256:80b841973c680cbb2e629209388a2231962d04fb2c727440798f4e14d13cd42d
-generated: "2024-10-03T10:30:13.174016+01:00"
+  version: v0.26.2
+digest: sha256:766d7c21d00874a636532fe6b63d8d7fce1971d0b768b2b350584ef3b2c7edf5
+generated: "2024-12-22T08:38:46.023525+01:00"

@@ -31,7 +31,7 @@ export HOME=/root/
 dpkg --purge docker docker-engine docker.io containerd runc
 
 # remove old kubernetes sources
-rm -rf /etc/apt/sources.list.d/kubernetes.list
+rm -rf /etc/apt/sources.list.d/kubernetes-*
 
 apt update
 apt install -y \
@@ -97,29 +97,20 @@ echo LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tCgptUUlOQkZpdDJpb0JFQURoV3B
 | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 
 # add kubernetes gpg key
-# curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | base64
+# curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | base64
 # expires 2026-12-29
 echo LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tClZlcnNpb246IEdudVBHIHYxLjQuNSAoR05VL0xpbnV4KQoKbVFFTkJHTUhvWGNCQ0FEdWtHT0VReWxlVmlPZ3RrTVZhN2hLaWZQNlBPQ1RoKzk4eE5XNFRmSEsvbkJKTjJzbQp1NFhhaVVtdEI5VXVHdDlqbDhWeFFnNGhPTVJmNDBjb0l3SHNOd3RTcmMyUjl2NUtncHZjdjUzN1FWSWlnVkhICldNTnZYZW9aa2tvRElVbGp2YkNFRFdhRWhTOVI1T01ZS2Q0QWFKK2YxYzhPRUxoRWNWMmRBUUxMeWp0bkVhRi8KcW1SRU4rM1k5KzVWY1JadlFIZXlCeENHK2hkVUdFNzQwaXhnblkyZ1NxWi9KNFllUW50UTZwTVVFaFQ2cGJhRQoxMHEySFVpZXJqL2ltMFYrWlVkQ2g0NkxrL1JkZmE1WktscVlPaUEyaU4xY29EUElkeXFLYXZjZGZQcVNyYUtGCkxhbjJLTGNaY2dUeFArMCtIZnpLZWZ2R0VuWmExMWNpdmJlOUFCRUJBQUcwUG1semRqcHJkV0psY201bGRHVnoKSUU5Q1V5QlFjbTlxWldOMElEeHBjM1k2YTNWaVpYSnVaWFJsYzBCaWRXbHNaQzV2Y0dWdWMzVnpaUzV2Y21jKwppUUUrQkJNQkNBQW9CUUpuRkYzNEFoc0RCUWtJSzJ5QkJnc0pDQWNEQWdZVkNBSUpDZ3NFRmdJREFRSWVBUUlYCmdBQUtDUkFqUmxUYW1pbGtOdE9BQ0FDREs5ZFE4Q0gySmk5QzNROTI2blZNVWlYZHlKSzFvbkNCclFTRUJxZFIKTEphVDZoR3g1cHp4a1FHZ1VEcFM5cDdMQTB1OTIwSEtMd0diN3lJQVd0eUU1VEFqMkNZcHJHZ3BxOThzZnNHQworVTVUOUlyQWR5YS9CYVRBa2tQNmdOaGZNak5hSzNiT1dzdnVMUmxsdUtNTmNoNGlmeStJd0xxYzFKTEc0MGJqCjJIbktCR1lrQzNtMFZ0UWZVdVBRTUltU0x0YS9Od1JISk1QbzhqZkd5TWFucU1NeHAzNS9lY1AyclhNZmIvbDEKV2pGRFk3aCs2bnFYYXkyMGxqTVhrTjIzVzh3RlRkdkM2bHE0NXd3TTVJQm5LTlIvVGpOTllBSWl6Wm9IRld6MQpjL2VjTVdXV0NCMlM3V2JZNHhJM0pTQ09ENFhJZmYzaWU3cGM2OC9rZ1B5dGlRSWNCQk1CQWdBR0JRSmpCNkYzCkFBb0pFTThMa296ZTFrODczVFFQLzB0MkYvamx0TFJRTUc3VkNMdzcrcHM1SkNXNUZJcXUvUzJpOWdTZE5BMEUKNDJ1K0x5eGpHM1l4bVZvVlJNc3hldTRrRXJ4cjhiTGNBNHA3MVcvbktlcXdGOVZMdVhLaXJzQkM3ejJzeUZpTApOZGwwQVJuQzNFTnd1TVZsU0N3Sk8wTU01TmlKdUxPcU9HWXlEMVh6U2ZuQ3prWE4wSkdBL2JmUFJTNW1QZm9XCjBPSElSWkZocUU3RUQ2d3lXcEhJS1Q4clhrRVNGd3N6VXdXL0Q3bzFIYWdYNytkdUx0OFdrcm9oR2J4VEoyMTUKWWFuT0tTcXlLZCs2WUd6RE5Vb0d1TU5QWko1d1RyVGhPa1R6RUZaNEhqbVExNnc1eG1jVUlTbkNaZDRuaHNiUwpxTi9VeVY5VnUzbG5rYXV0UzE1RTRDY2pQMVJSelNrVDBqa2E2MnZQdEF6dytQaUdyeU0xRjdzdnVSYUVuSkQ1CkdYemo5UkNVYVI2dnRGVnZxcW80ZnZiQTk5azRYWGorZEZBWFcwVFJaL2cyUU1lUFc5Y2RXaWVsY3IrdkhGNFoKMkVuc0FtZHZGN3I1ZTJKQ09VM044T1VvZGViVTZ3czRWZ1JWRzlncHRRZ2ZNUjB2Y2lCYk5ERzJYdWsxV0RrMQpxdHNjYmZtNUZWTDM2bzdka2pBMHgrVFlDdHFaSXI0eDNtbWZBWUZVcXp4cGZ5WGJTSHFVSlIyQ29XeGx5ejcyClhuSjdVRW8vMFViZ3pHenNjeExQRHlKSE1NNURuL05pOUZWVFZLbEFMSG5GT1lZU1RsdW9ZQUNGMURNdDdOSjMKb3lBME1FTEwwSlF6RWluaXhxeHBaMXRhT21WUi84cFFWcnFzdHF3cXNwM1JBQmFlWjgwSmJpZ1VDMjl6SlVWZgo9RXBsagotLS0tLUVORCBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tCg== \
 | base64 -d \
 | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
 
-cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.25.list
-deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.25/deb/ /
-EOF
-cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.26.list
-deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.26/deb/ /
-EOF
-cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.27.list
-deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.27/deb/ /
-EOF
-cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.28.list
-deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /
-EOF
 cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.29.list
 deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /
 EOF
 cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.30.list
 deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
+EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.31.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
 EOF
 cat <<EOF >/etc/apt/sources.list.d/docker.list
 deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable

@@ -5,6 +5,12 @@ fullConfig=./e2e/configs/full.yaml
 args=""
 branch=`git rev-parse --abbrev-ref HEAD`
 
+prepare-release:
+	make save-full-config
+	make update-readme
+	@echo "\n"
+	@echo "WARNING: Please check expiry of apt keys"
+	@echo "\n"
 test:
 	./scripts/validate-license.sh
 	go fmt ./cmd/... ./pkg/...

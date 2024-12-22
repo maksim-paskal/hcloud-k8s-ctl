@@ -219,13 +219,13 @@ func defaultConfig() Type {
 				Architecture: hcloud.ArchitectureX86, // x86 or arm
 			},
 			Kubernetes: serverComponentKubernetes{
-				Version: "1.30.5-1.1",
+				Version: "1.31.4-1.1",
 			},
 			Docker: serverComponentDocker{
-				Version: "5:27.3.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
+				Version: "5:27.4.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
 			},
 			Containerd: serverComponentContainerd{
-				Version:        "1.7.22-1",
+				Version:        "1.7.24-1",
 				PauseContainer: "registry.k8s.io/pause:3.2",
 			},
 		},
