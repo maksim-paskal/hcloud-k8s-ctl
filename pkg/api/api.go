@@ -588,7 +588,7 @@ func (api *ApplicationAPI) createNetwork(ctx context.Context) error {
 	}
 
 	k8sNetworkSubnet := hcloud.NetworkSubnet{
-		Type:        hcloud.NetworkSubnetTypeServer,
+		Type:        hcloud.NetworkSubnetTypeCloud,
 		IPRange:     IPRangeSubnetNet,
 		NetworkZone: config.Get().NetworkZone,
 	}
