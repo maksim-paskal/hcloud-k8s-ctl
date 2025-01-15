@@ -9,6 +9,13 @@ deployments:
       nodeSelector: {}
       tolerations: []
       affinity: {}
+      image:
+        repository: paskalmaksim/nfs-server-alpine
+        tag: 20250115653a8da
+        pullPolicy: IfNotPresent
+      env:
+      - name: SHARED_DIRECTORY
+        value: "/exports"
     nfs-subdir-external-provisioner:
       enabled: false
   registry:
