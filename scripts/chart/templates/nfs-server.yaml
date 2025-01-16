@@ -49,14 +49,10 @@ spec:
 {{ end }}
       containers:
       - name: nfs-server
-        # git clone git@github.com:sjiveson/nfs-server-alpine.git
-        # cd nfs-server-alpine
-        # remove --no-nfs-version 2 in nfsd.sh
-        # docker build . --platform=linux/amd64,linux/arm64 --pull --push -t paskalmaksim/nfs-server-alpine:$(date '+%Y%m%d')$(git rev-parse --short HEAD)
-        image: paskalmaksim/nfs-server-alpine:20231106ca320f7
+        image: {{ printf "%s:%s" .Values.deployments.nfs.server.image.repository .Values.deployments.nfs.server.image.tag }}
+        imagePullPolicy: {{ .Values.deployments.nfs.server.image.pullPolicy }}
         env:
-        - name: SHARED_DIRECTORY
-          value: "/exports"
+{{ toYaml .Values.deployments.nfs.server.env | indent 8 }}
         volumeMounts:
         - mountPath: /exports
           name: nfs-data

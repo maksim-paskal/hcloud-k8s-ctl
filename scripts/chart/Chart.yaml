@@ -1,6 +1,6 @@
 apiVersion: v2
 name: hcloud-k8s-ctl
-version: 0.0.2
+version: 0.0.3
 dependencies:
 - name: nfs-subdir-external-provisioner
   version: "4.0.16"
