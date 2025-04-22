@@ -112,6 +112,9 @@ EOF
 cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.31.list
 deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /
 EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.32.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /
+EOF
 cat <<EOF >/etc/apt/sources.list.d/docker.list
 deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable
 EOF
