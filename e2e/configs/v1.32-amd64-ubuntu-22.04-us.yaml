@@ -1,0 +1,25 @@
+# Kubernetes v1.32 in US East
+ipRange: "10.0.0.0/16"
+masterCount: 3
+networkZone: us-east
+location: ash
+datacenter: ash-dc1
+masterServers:
+  servertype: cpx21
+serverComponents:
+  ubuntu:
+    version: ubuntu-22.04
+    architecture: x86
+  kubernetes:
+    version: 1.32.3-1.1
+  docker:
+    version: 5:28.1.0-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+  containerd:
+    version: 1.7.27-1
+cluster-autoscaler:
+  autoscalingGroups:
+  - name: cpx51-ash
+    minSize: 1
+    maxSize: 20
+    instanceType: cpx51
+    region: ash
