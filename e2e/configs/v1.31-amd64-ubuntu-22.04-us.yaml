@@ -1,4 +1,4 @@
-# Kubernetes v1.31 in US East
+# Kubernetes v1.30 in US East
 ipRange: "10.0.0.0/16"
 masterCount: 3
 networkZone: us-east
