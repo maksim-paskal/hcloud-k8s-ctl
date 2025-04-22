@@ -87,7 +87,7 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 				t.Fatal(err)
 			}
 
-			tmpFile, err := os.CreateTemp("", "kubeconfig")
+			tmpFile, err := os.CreateTemp(t.TempDir(), "kubeconfig")
 			if err != nil {
 				t.Fatal(err)
 			}
