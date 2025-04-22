@@ -54,7 +54,7 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 		t.Fatal(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Hour)
+	ctx, cancel := context.WithTimeout(t.Context(), 3*time.Hour)
 	defer cancel()
 
 	interruptionSignal := make(chan os.Signal, 1)
@@ -117,7 +117,7 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 				t.Fatal(err)
 			}
 
-			applicationAPI.DeleteCluster(context.Background()) //nolint:contextcheck
+			applicationAPI.DeleteCluster(t.Context()) //nolint:contextcheck
 
 			utils.SleepContext(ctx, 10*time.Second)
 
@@ -161,7 +161,7 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 			}
 
 			// delete cluster after test
-			applicationAPI.DeleteCluster(context.Background()) //nolint:contextcheck
+			applicationAPI.DeleteCluster(t.Context()) //nolint:contextcheck
 		})
 	}
 }
