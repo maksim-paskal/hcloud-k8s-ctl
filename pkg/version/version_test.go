@@ -13,7 +13,6 @@ limitations under the License.
 package version_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/version"
@@ -22,7 +21,7 @@ import (
 func TestVersion(t *testing.T) {
 	t.Parallel()
 
-	err := version.CheckLatest(context.TODO(), "0.3.0-86191bc-1701335786")
+	err := version.CheckLatest(t.Context(), "0.3.0-86191bc-1701335786")
 	if err != nil {
 		t.Fatal(err)
 	}
