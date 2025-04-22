@@ -76,6 +76,7 @@ AllowAgentForwarding no
 EOF
 
 # restart sshd to apply new config
+mkdir -p /run/sshd
 sshd -t
 systemctl restart ssh.service
 
