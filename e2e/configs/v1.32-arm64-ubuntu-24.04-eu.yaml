@@ -1,0 +1,22 @@
+# Kubernetes v1.32 in Europe (ARM64 architecture)
+ipRange: "10.0.0.0/16"
+masterCount: 3
+serverComponents:
+  ubuntu:
+    version: ubuntu-24.04
+    architecture: arm
+  kubernetes:
+    version: 1.32.3-1.1
+  docker:
+    version: 5:28.1.0-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)
+  containerd:
+    version: 1.7.27-1
+masterServers:
+  servertype: cax11
+cluster-autoscaler:
+  autoscalingGroups:
+  - name: cax-fsn1
+    minSize: 1
+    maxSize: 20
+    instanceType: cax21
+    region: fsn1
