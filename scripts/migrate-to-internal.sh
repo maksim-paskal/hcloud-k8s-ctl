@@ -38,7 +38,7 @@ network:
         scope: link
 EOF
 chmod 600 /etc/netplan/*
-netplan apply
+ip route add 10.96.0.0/12 dev enp7s0 proto static scope link
 
 sed -i "s/$EXTERNAL_IP/$INTERNAL_IP/" /etc/kubernetes/kubelet.conf
 
