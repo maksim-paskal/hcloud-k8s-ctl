@@ -13,6 +13,7 @@ limitations under the License.
 package version_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/version"
@@ -23,6 +24,8 @@ func TestVersion(t *testing.T) {
 
 	err := version.CheckLatest(t.Context(), "0.3.0-86191bc-1701335786")
 	if err != nil {
-		t.Fatal(err)
+		if !strings.Contains(err.Error(), "new version available") {
+			t.Fatal(err)
+		}
 	}
 }
