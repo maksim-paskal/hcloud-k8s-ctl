@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
+	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -121,7 +122,11 @@ func getDefaultClusterAutoscaler() map[interface{}]interface{} {
 		hcloudLocationEUNuremberg,
 		hcloudLocationEUHelsinki,
 	}
-	defaultServers := strings.Split(defaultAutoscalerInstances, ",")
+	defaultServers := strings.Split(hcloudInstanceTypes, "\n")
+
+	defaultServers = utils.Filter(defaultServers, func(s string) bool {
+		return strings.HasPrefix(s, "cpx") || strings.HasPrefix(s, "cx")
+	})
 
 	if instances := os.Getenv("AUTOSCALER_INSTANCES"); len(instances) > 0 {
 		defaultServers = append(defaultServers, strings.Split(instances, ",")...)
@@ -136,7 +141,7 @@ func getDefaultClusterAutoscaler() map[interface{}]interface{} {
 	for _, location := range defaultLocations {
 		for _, server := range defaultServers {
 			result = append(result, &clusterAutoscalingGroup{
-				Name:         fmt.Sprintf("%s-%s", server, location),
+				Name:         fmt.Sprintf("%s-%s", strings.TrimSpace(server), strings.TrimSpace(location)),
 				MinSize:      0,
 				MaxSize:      workersMaxSize,
 				InstanceType: server,

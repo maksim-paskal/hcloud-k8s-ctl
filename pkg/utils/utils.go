@@ -25,3 +25,15 @@ func SleepContext(ctx context.Context, duration time.Duration) {
 		return
 	}
 }
+
+func Filter[T any](a []T, f func(T) bool) []T {
+	var result []T
+
+	for _, s := range a {
+		if f(s) {
+			result = append(result, s)
+		}
+	}
+
+	return result
+}
