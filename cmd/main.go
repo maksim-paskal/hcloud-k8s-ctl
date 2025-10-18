@@ -63,6 +63,10 @@ func main() { //nolint:cyclop,funlen
 
 	if *checkNewVersion {
 		if err := version.CheckLatest(ctx, gitVersion); err != nil {
+			if strings.Contains(err.Error(), "new version available") {
+				log.Fatal(err)
+			}
+
 			log.WithError(err).Warn("error check latest version")
 		}
 	}
