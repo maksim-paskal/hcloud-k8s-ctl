@@ -20,7 +20,6 @@ import (
 
 	semver "github.com/hashicorp/go-version"
 	"github.com/pkg/errors"
-	log "github.com/sirupsen/logrus"
 )
 
 var versionClient = http.Client{
@@ -67,7 +66,7 @@ func CheckLatest(ctx context.Context, myVersion string) error {
 	}
 
 	if currentVersion.Core().LessThan(versionGithub) {
-		log.Infof("new version available: %s", versionURL)
+		return errors.Errorf("new version available: %s, please update", versionURL)
 	}
 
 	return nil
