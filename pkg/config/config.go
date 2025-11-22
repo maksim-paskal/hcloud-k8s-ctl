@@ -178,6 +178,8 @@ type Type struct {
 	PreStartScript     string             `yaml:"preStartScript"`
 	PostStartScript    string             `yaml:"postStartScript"`
 
+	Kubelet map[interface{}]interface{} `yaml:"kubelet,omitempty"`
+
 	// helm dependencies values.yaml
 	ClusterAutoscaler            map[interface{}]interface{} `yaml:"cluster-autoscaler,omitempty"`              //nolint:tagliatelle,lll
 	NfsSubdirExternalProvisioner map[interface{}]interface{} `yaml:"nfs-subdir-external-provisioner,omitempty"` //nolint:tagliatelle,lll
@@ -261,6 +263,7 @@ func defaultConfig() Type {
 		},
 		Deployments:       emptyStruct{},
 		ClusterAutoscaler: getDefaultClusterAutoscaler(),
+		Kubelet:           getDefaultKubeletConfig(),
 	}
 }
 
@@ -388,4 +391,51 @@ func SaveConfig(filePath string) error {
 	}
 
 	return nil
+}
+
+func getDefaultKubeletConfig() map[interface{}]interface{} {
+	const defaultConfig = `authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    cacheTTL: 2m0s
+    enabled: true
+  x509:
+    clientCAFile: /etc/kubernetes/pki/ca.crt
+authorization:
+  mode: Webhook
+  webhook:
+    cacheAuthorizedTTL: 5m0s
+    cacheUnauthorizedTTL: 30s
+cgroupDriver: systemd
+clusterDNS:
+- 10.96.0.10
+clusterDomain: cluster.local
+resolvConf: /etc/kubernetes/kubelet/resolv.conf
+rotateCertificates: true
+staticPodPath: /etc/kubernetes/manifests
+featureGates:
+  RotateKubeletServerCertificate: true
+evictionHard:
+  memory.available: "100Mi"
+  nodefs.available: "10%"
+  nodefs.inodesFree: "5%"
+kubeReserved:
+  cpu: "10m"
+  memory: "100Mi"
+  ephemeral-storage: "1Gi"
+protectKernelDefaults: true
+serializeImagePulls: false
+serverTLSBootstrap: true
+providerID: "$PROVIDER_ID"
+runtimeRequestTimeout: "15m"`
+
+	kubeletConfig := make(map[interface{}]interface{})
+
+	err := yaml.Unmarshal([]byte(defaultConfig), &kubeletConfig)
+	if err != nil {
+		log.Fatalf("failed to unmarshal default kubelet config: %s", err)
+	}
+
+	return kubeletConfig
 }

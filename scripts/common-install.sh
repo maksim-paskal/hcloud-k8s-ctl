@@ -228,41 +228,7 @@ EOF
 cat <<EOF | tee /etc/kubernetes/kubelet/config.yaml
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
-authentication:
-  anonymous:
-    enabled: false
-  webhook:
-    cacheTTL: 2m0s
-    enabled: true
-  x509:
-    clientCAFile: /etc/kubernetes/pki/ca.crt
-authorization:
-  mode: Webhook
-  webhook:
-    cacheAuthorizedTTL: 5m0s
-    cacheUnauthorizedTTL: 30s
-cgroupDriver: systemd
-clusterDNS:
-- 10.96.0.10
-clusterDomain: cluster.local
-resolvConf: /etc/kubernetes/kubelet/resolv.conf
-rotateCertificates: true
-staticPodPath: /etc/kubernetes/manifests
-featureGates:
-  RotateKubeletServerCertificate: true
-evictionHard:
-  memory.available: "100Mi"
-  nodefs.available: "10%"
-  nodefs.inodesFree: "5%"
-kubeReserved:
-  cpu: "10m"
-  memory: "100Mi"
-  ephemeral-storage: "1Gi"
-protectKernelDefaults: true
-serializeImagePulls: false
-serverTLSBootstrap: true
-providerID: "$PROVIDER_ID"
-runtimeRequestTimeout: "15m"
+{{ toYaml .Values.kubelet }}
 EOF
 
 cat <<EOF | tee /etc/default/kubelet
