@@ -226,13 +226,13 @@ func defaultConfig() Type {
 				Architecture: hcloud.ArchitectureX86, // x86 or arm
 			},
 			Kubernetes: serverComponentKubernetes{
-				Version: "1.31.4-1.1",
+				Version: "1.33.7-1.1",
 			},
 			Docker: serverComponentDocker{
-				Version: "5:27.4.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
+				Version: "5:29.1.4-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
 			},
 			Containerd: serverComponentContainerd{
-				Version:        "1.7.24-1",
+				Version:        "2.2.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
 				PauseContainer: "registry.k8s.io/pause:3.2",
 			},
 		},
@@ -250,7 +250,7 @@ func defaultConfig() Type {
 		MasterServers: masterServers{
 			NamePattern:        "master-%d",
 			PlacementGroupName: "master-placement-group",
-			ServerType:         "cx22",
+			ServerType:         "cx23",
 			Labels:             serverLabels,
 			WaitTimeInRetry:    waitTimeInRetry,
 			RetryTimeLimit:     retryTimeLimit,

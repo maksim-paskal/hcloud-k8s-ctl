@@ -13,10 +13,6 @@ ccx33
 ccx43
 ccx53
 ccx63
-cx22
-cx32
-cx42
-cx52
 cpx12
 cpx22
 cpx32
