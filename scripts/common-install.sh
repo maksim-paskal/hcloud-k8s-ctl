@@ -104,9 +104,6 @@ echo LS0tLS1CRUdJTiBQR1AgUFVCTElDIEtFWSBCTE9DSy0tLS0tClZlcnNpb246IEdudVBHIHYxLjQ
 | base64 -d \
 | gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
 
-cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.29.list
-deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /
-EOF
 cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.30.list
 deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /
 EOF
@@ -115,6 +112,15 @@ deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.
 EOF
 cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.32.list
 deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.32/deb/ /
+EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.33.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.33/deb/ /
+EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.34.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /
+EOF
+cat <<EOF >/etc/apt/sources.list.d/kubernetes-v1.35.list
+deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.35/deb/ /
 EOF
 cat <<EOF >/etc/apt/sources.list.d/docker.list
 deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable
