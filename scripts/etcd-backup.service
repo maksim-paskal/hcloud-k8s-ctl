@@ -1,0 +1,14 @@
+# /etc/systemd/system/etcd-backup.service
+[Unit]
+Description=etcd Backup Service
+Wants=etcd-backup.timer
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/etcd-backup.sh
+User=root
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
