@@ -233,7 +233,7 @@ func defaultConfig() Type {
 			},
 			Containerd: serverComponentContainerd{
 				Version:        "2.2.1-1~ubuntu.$(lsb_release -rs)~$(lsb_release -cs)",
-				PauseContainer: "registry.k8s.io/pause:3.2",
+				PauseContainer: "registry.k8s.io/pause:3.10",
 			},
 		},
 		ClusterName:    "k8s",
