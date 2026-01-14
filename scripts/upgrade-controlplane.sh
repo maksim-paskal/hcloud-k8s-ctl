@@ -28,4 +28,7 @@ else
   kubeadm upgrade --ignore-preflight-errors=CoreDNSUnsupportedPlugins node
 fi
 
+# cleanup tmp files
+rm -rf /etc/kubernetes/tmp/
+
 systemctl restart kubelet
