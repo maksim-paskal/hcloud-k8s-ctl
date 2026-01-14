@@ -1,0 +1,12 @@
+# /etc/systemd/system/etcd-backup.timer
+[Unit]
+Description=etcd Backup Timer
+Requires=etcd-backup.service
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=12h
+Unit=etcd-backup.service
+
+[Install]
+WantedBy=timers.target
