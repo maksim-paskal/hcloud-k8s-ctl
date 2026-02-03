@@ -187,7 +187,7 @@ EOF
 
 # set higher ulimit for containerd
 ctr oci spec | \
-jq '.process.rlimits = [{"type": "RLIMIT_NOFILE", "hard": 65536, "soft": 1048576}]' > /etc/containerd/base-runtime-spec.json
+jq '.process.rlimits = [{"type": "RLIMIT_NOFILE", "soft": 65536, "hard": 1048576}]' > /etc/containerd/base-runtime-spec.json
 
 cat <<EOF | tee /etc/crictl.yaml
 runtime-endpoint: unix:///var/run/containerd/containerd.sock
