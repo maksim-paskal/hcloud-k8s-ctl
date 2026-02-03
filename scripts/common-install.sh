@@ -197,6 +197,12 @@ EOF
 
 modprobe br_netfilter overlay
 
+mkdir -p /etc/systemd/system/containerd.service.d/
+cat <<EOF | tee /etc/systemd/system/containerd.service.d/override.conf
+[Service]
+LimitNOFILE=65536
+EOF
+
 cat <<EOF | tee /etc/sysctl.conf
 net.bridge.bridge-nf-call-ip6tables=1
 net.bridge.bridge-nf-call-iptables=1
