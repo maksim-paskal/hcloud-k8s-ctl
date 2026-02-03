@@ -35,6 +35,7 @@ rm -rf /etc/apt/sources.list.d/kubernetes-*
 
 apt update
 apt install -y \
+jq \
 apt-transport-https \
 ca-certificates \
 curl \
@@ -174,6 +175,7 @@ config_path = "/etc/containerd/certs.d:/etc/docker/certs.d"
 
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
 runtime_type = "io.containerd.runc.v2"
+base_runtime_spec = "/etc/containerd/base-runtime-spec.json"
 
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
 SystemdCgroup = true
@@ -182,6 +184,10 @@ SystemdCgroup = true
 bin_dir = "/opt/cni/bin"
 conf_dir = "/etc/cni/net.d"
 EOF
+
+# set higher ulimit for containerd
+ctr oci spec | \
+jq '.process.rlimits = [{"type": "RLIMIT_NOFILE", "hard": 65536, "soft": 1048576}]' > /etc/containerd/base-runtime-spec.json
 
 cat <<EOF | tee /etc/crictl.yaml
 runtime-endpoint: unix:///var/run/containerd/containerd.sock
@@ -196,12 +202,6 @@ br_netfilter
 EOF
 
 modprobe br_netfilter overlay
-
-mkdir -p /etc/systemd/system/containerd.service.d/
-cat <<EOF | tee /etc/systemd/system/containerd.service.d/override.conf
-[Service]
-LimitNOFILE=65536
-EOF
 
 cat <<EOF | tee /etc/sysctl.conf
 net.bridge.bridge-nf-call-ip6tables=1
