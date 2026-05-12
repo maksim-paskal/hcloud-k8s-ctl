@@ -3,3 +3,4 @@ dist
 coverage.out
 config-*.yaml
 /scripts/chart/charts/
+/scripts/chart/tmpcharts/

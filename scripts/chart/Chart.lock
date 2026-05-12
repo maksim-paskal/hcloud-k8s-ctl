@@ -1,24 +1,24 @@
 dependencies:
 - name: nfs-subdir-external-provisioner
   repository: https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner
-  version: 4.0.16
+  version: 4.0.18
 - name: kubelet-csr-approver
   repository: https://postfinance.github.io/kubelet-csr-approver
-  version: 0.2.3
+  version: 1.2.14
 - name: hcloud-csi
   repository: https://charts.hetzner.cloud
-  version: 2.11.0
+  version: 2.20.2
 - name: hcloud-cloud-controller-manager
   repository: https://charts.hetzner.cloud
   version: 1.31.0
 - name: cluster-autoscaler
   repository: https://kubernetes.github.io/autoscaler
-  version: 9.43.2
+  version: 9.57.0
 - name: metrics-server
   repository: https://kubernetes-sigs.github.io/metrics-server
-  version: 3.12.2
+  version: 3.13.0
 - name: flannel
   repository: https://flannel-io.github.io/flannel
-  version: v0.26.2
-digest: sha256:033cbd53ad3ee48abd55fd0ac1ea3a354f0e3bf4aff76b5aeecff37c0d894e96
-generated: "2026-05-08T14:23:45.219149+02:00"
+  version: v0.28.4
+digest: sha256:14cbab3ff40c4a9381e667ca5d94ac31b72e12f1625d376e45e6ec6863ba32ec
+generated: "2026-05-12T08:15:13.203085+02:00"
