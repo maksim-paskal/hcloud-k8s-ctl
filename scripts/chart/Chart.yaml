@@ -1,26 +1,26 @@
 apiVersion: v2
 name: hcloud-k8s-ctl
-version: 0.0.3
+version: 0.1.0
 dependencies:
 - name: nfs-subdir-external-provisioner
-  version: "4.0.16"
+  version: "4.0.18"
   repository: "https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner"
   condition: deployments.nfs.nfs-subdir-external-provisioner.enabled
 - name: kubelet-csr-approver
-  version: "0.2.3"
+  version: "1.2.14"
   repository: https://postfinance.github.io/kubelet-csr-approver
 - name: hcloud-csi
-  version: "2.11.0"
+  version: "2.20.2"
   repository: https://charts.hetzner.cloud
 - name: hcloud-cloud-controller-manager
   version: "1.31.0"
   repository: https://charts.hetzner.cloud
 - name: cluster-autoscaler
-  version: "9.43.2"
+  version: "9.57.0"
   repository: https://kubernetes.github.io/autoscaler
 - name: metrics-server
-  version: "3.12.2"
+  version: "3.13.0"
   repository: https://kubernetes-sigs.github.io/metrics-server
 - name: flannel
-  version: "v0.26.2"
+  version: "v0.28.4"
   repository: https://flannel-io.github.io/flannel
