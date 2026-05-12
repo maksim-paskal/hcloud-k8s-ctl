@@ -13,7 +13,7 @@ dependencies:
   version: "2.11.0"
   repository: https://charts.hetzner.cloud
 - name: hcloud-cloud-controller-manager
-  version: "1.21.0"
+  version: "1.31.0"
   repository: https://charts.hetzner.cloud
 - name: cluster-autoscaler
   version: "9.43.2"

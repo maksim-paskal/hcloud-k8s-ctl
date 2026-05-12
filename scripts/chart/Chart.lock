@@ -10,7 +10,7 @@ dependencies:
   version: 2.11.0
 - name: hcloud-cloud-controller-manager
   repository: https://charts.hetzner.cloud
-  version: 1.21.0
+  version: 1.31.0
 - name: cluster-autoscaler
   repository: https://kubernetes.github.io/autoscaler
   version: 9.43.2
@@ -20,5 +20,5 @@ dependencies:
 - name: flannel
   repository: https://flannel-io.github.io/flannel
   version: v0.26.2
-digest: sha256:766d7c21d00874a636532fe6b63d8d7fce1971d0b768b2b350584ef3b2c7edf5
-generated: "2024-12-22T08:38:46.023525+01:00"
+digest: sha256:033cbd53ad3ee48abd55fd0ac1ea3a354f0e3bf4aff76b5aeecff37c0d894e96
+generated: "2026-05-08T14:23:45.219149+02:00"
