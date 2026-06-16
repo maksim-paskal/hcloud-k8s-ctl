@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: master-load-balancer
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  volumes:
+  - name: tmp
+    emptyDir: {}
+  containers:
+  - name: nginx
+    image: nginx:1.31-alpine
+    command: ["/bin/sh", "-c"]
+    volumeMounts:
+    - name: tmp
+      mountPath: /tmp
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 101
+      runAsGroup: 101
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+    args:
+      - |
+        cat > /tmp/nginx.conf <<'EOF'
+        pid /tmp/nginx.pid;
+        worker_processes 2;
+        daemon off;
+        events {}
+
+        stream {
+          upstream backend {
+            server 10.0.0.3:6443;
+            server 10.0.0.4:6443;
+            server 10.0.0.5:6443;
+          }
+
+          server {
+            listen 127.0.0.1:16443;
+            proxy_pass backend;
+          }
+        }
+        EOF
+        nginx -c /tmp/nginx.conf
