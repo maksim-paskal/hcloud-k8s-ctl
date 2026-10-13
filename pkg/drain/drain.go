@@ -40,7 +40,8 @@ func NewClusterDrainer(hcloudClient *hcloud.Client) *ClusterDrainer {
 
 func (api *ClusterDrainer) DeleteCluster(ctx context.Context) {
 	for ctx.Err() == nil {
-		if err := api.processDeleteCluster(ctx); err != nil {
+		err := api.processDeleteCluster(ctx)
+		if err != nil {
 			log.WithError(err).Error("delete cluster")
 		} else {
 			break
@@ -51,31 +52,38 @@ func (api *ClusterDrainer) DeleteCluster(ctx context.Context) {
 }
 
 func (api *ClusterDrainer) processDeleteCluster(ctx context.Context) error {
-	if err := api.deleteNetworks(ctx); err != nil {
+	err := api.deleteNetworks(ctx)
+	if err != nil {
 		return err
 	}
 
-	if err := api.deleteSSHKeys(ctx); err != nil {
+	err = api.deleteSSHKeys(ctx)
+	if err != nil {
 		return err
 	}
 
-	if err := api.deleteLoadBalancer(ctx); err != nil {
+	err = api.deleteLoadBalancer(ctx)
+	if err != nil {
 		return err
 	}
 
-	if err := api.deleteServers(ctx); err != nil {
+	err = api.deleteServers(ctx)
+	if err != nil {
 		return err
 	}
 
-	if err := api.deletePlacementGroup(ctx); err != nil {
+	err = api.deletePlacementGroup(ctx)
+	if err != nil {
 		return err
 	}
 
-	if err := api.deleteFirewalls(ctx); err != nil {
+	err = api.deleteFirewalls(ctx)
+	if err != nil {
 		return err
 	}
 
-	if err := api.deleteVolumes(ctx); err != nil {
+	err = api.deleteVolumes(ctx)
+	if err != nil {
 		return err
 	}
 
@@ -124,9 +132,7 @@ func (api *ClusterDrainer) deleteLoadBalancer(ctx context.Context) error {
 		}
 
 		loadBalancers, _, _ := api.hcloudClient.LoadBalancer.List(ctx, hcloud.LoadBalancerListOpts{
-			ListOpts: hcloud.ListOpts{
-				LabelSelector: "hcloud-ccm/service-uid",
-			},
+			LabelSelector: "hcloud-ccm/service-uid",
 		})
 
 		allBalancers = append(allBalancers, loadBalancers...)
@@ -136,7 +142,7 @@ func (api *ClusterDrainer) deleteLoadBalancer(ctx context.Context) error {
 		}
 
 		for _, loadBalancer := range allBalancers {
-			_, err := api.hcloudClient.LoadBalancer.Delete(ctx, loadBalancer)
+			_, _, err := api.hcloudClient.LoadBalancer.DeleteWithResult(ctx, loadBalancer)
 			if err != nil {
 				return errors.Wrap(err, "error deleting LoadBalancer")
 			}
@@ -150,16 +156,12 @@ func (api *ClusterDrainer) deleteServers(ctx context.Context) error {
 	for ctx.Err() == nil {
 		// get master nodes
 		allServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
-			ListOpts: hcloud.ListOpts{
-				LabelSelector: api.MasterSelector,
-			},
+			LabelSelector: api.MasterSelector,
 		})
 
 		// get worker nodes
 		nodeServers, _, _ := api.hcloudClient.Server.List(ctx, hcloud.ServerListOpts{
-			ListOpts: hcloud.ListOpts{
-				LabelSelector: api.NodeGroupSelector,
-			},
+			LabelSelector: api.NodeGroupSelector,
 		})
 
 		allServers = append(allServers, nodeServers...)
@@ -198,9 +200,7 @@ func (api *ClusterDrainer) deletePlacementGroup(ctx context.Context) error {
 func (api *ClusterDrainer) deleteFirewalls(ctx context.Context) error {
 	for ctx.Err() == nil {
 		k8sFirewalls, _, _ := api.hcloudClient.Firewall.List(ctx, hcloud.FirewallListOpts{
-			ListOpts: hcloud.ListOpts{
-				LabelSelector: "cluster=" + config.Get().ClusterName,
-			},
+			LabelSelector: "cluster=" + config.Get().ClusterName,
 		})
 
 		if len(k8sFirewalls) == 0 {

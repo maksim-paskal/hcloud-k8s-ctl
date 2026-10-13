@@ -15,7 +15,7 @@ test:
 	./scripts/validate-license.sh
 	go fmt ./cmd/... ./pkg/...
 	go mod tidy
-	go run github.com/golangci/golangci-lint/cmd/golangci-lint@latest run -v
+	go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest run -v
 	CONFIG=config_test.yaml go test -race -coverprofile coverage.out ./cmd/... ./pkg/...
 .PHONY: e2e
 e2e:

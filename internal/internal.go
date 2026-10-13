@@ -19,13 +19,15 @@ import (
 )
 
 func Init() error {
-	if err := config.Load(); err != nil {
+	err := config.Load()
+	if err != nil {
 		return errors.Wrap(err, "error loading config")
 	}
 
 	log.Infof("Loaded config:\n%s\n", config.String())
 
-	if err := config.Check(); err != nil {
+	err = config.Check()
+	if err != nil {
 		return errors.Wrap(err, "error checking config")
 	}
 

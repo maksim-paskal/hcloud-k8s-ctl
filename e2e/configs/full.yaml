@@ -16,7 +16,6 @@ ipRangeSubnet: 10.0.0.0/16
 masterCount: 3
 networkZone: eu-central
 location: hel1
-datacenter: hel1-dc2
 masterServers:
   namepattern: master-%d
   placementgroupname: master-placement-group

@@ -22,7 +22,8 @@ import (
 func TestConfig(t *testing.T) {
 	t.Parallel()
 
-	if err := config.Load(); err != nil {
+	err := config.Load()
+	if err != nil {
 		t.Fatal(err)
 	}
 

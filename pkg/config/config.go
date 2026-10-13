@@ -114,9 +114,7 @@ func getDefaultMasterServersInitParams() masterServersInitParams {
 	}
 }
 
-func getDefaultClusterAutoscaler() map[interface{}]interface{} {
-	result := make([]*clusterAutoscalingGroup, 0)
-
+func getDefaultClusterAutoscaler() map[any]any {
 	defaultLocations := []string{
 		hcloudLocationEUFalkenstein,
 		hcloudLocationEUNuremberg,
@@ -131,6 +129,8 @@ func getDefaultClusterAutoscaler() map[interface{}]interface{} {
 	if instances := os.Getenv("AUTOSCALER_INSTANCES"); len(instances) > 0 {
 		defaultServers = append(defaultServers, strings.Split(instances, ",")...)
 	}
+
+	result := make([]*clusterAutoscalingGroup, 0, len(defaultLocations)*len(defaultServers))
 
 	workersMaxSize := 20
 
@@ -150,7 +150,7 @@ func getDefaultClusterAutoscaler() map[interface{}]interface{} {
 		}
 	}
 
-	return map[interface{}]interface{}{
+	return map[any]any{
 		"autoscalingGroups": result,
 	}
 }
@@ -170,24 +170,23 @@ type Type struct {
 	MasterCount        int                `yaml:"masterCount"`
 	NetworkZone        hcloud.NetworkZone `yaml:"networkZone"`
 	Location           string             `yaml:"location"`
-	Datacenter         string             `yaml:"datacenter"`
 	MasterServers      masterServers      `yaml:"masterServers"`
 	MasterLoadBalancer masterLoadBalancer `yaml:"masterLoadBalancer"`
 	CliArgs            cliArgs            `yaml:"cliArgs"`
-	Deployments        interface{}        `yaml:"deployments"` // values.yaml in chart
+	Deployments        any                `yaml:"deployments"` // values.yaml in chart
 	PreStartScript     string             `yaml:"preStartScript"`
 	PostStartScript    string             `yaml:"postStartScript"`
 
-	Kubelet map[interface{}]interface{} `yaml:"kubelet,omitempty"`
+	Kubelet map[any]any `yaml:"kubelet,omitempty"`
 
 	// helm dependencies values.yaml
-	ClusterAutoscaler            map[interface{}]interface{} `yaml:"cluster-autoscaler,omitempty"`              //nolint:tagliatelle,lll
-	NfsSubdirExternalProvisioner map[interface{}]interface{} `yaml:"nfs-subdir-external-provisioner,omitempty"` //nolint:tagliatelle,lll
-	KubeletCSRApprover           map[interface{}]interface{} `yaml:"kubelet-csr-approver,omitempty"`            //nolint:tagliatelle,lll
-	HCloudCSI                    map[interface{}]interface{} `yaml:"hcloud-csi,omitempty"`                      //nolint:tagliatelle,lll
-	HCloudCCM                    map[interface{}]interface{} `yaml:"hcloud-cloud-controller-manager,omitempty"` //nolint:tagliatelle,lll
-	MetricsServer                map[interface{}]interface{} `yaml:"metrics-server,omitempty"`                  //nolint:tagliatelle,lll
-	Flannel                      map[interface{}]interface{} `yaml:"flannel,omitempty"`                         //nolint:tagliatelle,lll
+	ClusterAutoscaler            map[any]any `yaml:"cluster-autoscaler,omitempty"`              //nolint:tagliatelle
+	NfsSubdirExternalProvisioner map[any]any `yaml:"nfs-subdir-external-provisioner,omitempty"` //nolint:tagliatelle
+	KubeletCSRApprover           map[any]any `yaml:"kubelet-csr-approver,omitempty"`            //nolint:tagliatelle
+	HCloudCSI                    map[any]any `yaml:"hcloud-csi,omitempty"`                      //nolint:tagliatelle
+	HCloudCCM                    map[any]any `yaml:"hcloud-cloud-controller-manager,omitempty"` //nolint:tagliatelle
+	MetricsServer                map[any]any `yaml:"metrics-server,omitempty"`                  //nolint:tagliatelle
+	Flannel                      map[any]any `yaml:"flannel,omitempty"`                         //nolint:tagliatelle
 }
 
 //nolint:gochecknoglobals
@@ -241,7 +240,6 @@ func defaultConfig() Type {
 		IPRangeSubnet:  "",
 		NetworkZone:    hcloud.NetworkZoneEUCentral,
 		Location:       defaultLocation,
-		Datacenter:     defaultDatacenter,
 		KubeConfigPath: kubeConfigPath,
 		SSHPrivateKey:  privateKey,
 		SSHPublicKey:   privateKey + ".pub",
@@ -343,10 +341,12 @@ func hideSensitiveData(out []byte, sensitive string) []byte {
 
 func String() string {
 	var b bytes.Buffer
+
 	yamlEncoder := yaml.NewEncoder(&b)
 	yamlEncoder.SetIndent(2) //nolint:mnd
 
-	if err := yamlEncoder.Encode(&config); err != nil {
+	err := yamlEncoder.Encode(&config)
+	if err != nil {
 		return fmt.Sprintf("ERROR %s", err)
 	}
 
@@ -393,7 +393,7 @@ func SaveConfig(filePath string) error {
 	return nil
 }
 
-func getDefaultKubeletConfig() map[interface{}]interface{} {
+func getDefaultKubeletConfig() map[any]any {
 	const defaultConfig = `authentication:
   anonymous:
     enabled: false
@@ -430,7 +430,7 @@ serverTLSBootstrap: true
 providerID: "$PROVIDER_ID"
 runtimeRequestTimeout: "15m"`
 
-	kubeletConfig := make(map[interface{}]interface{})
+	kubeletConfig := make(map[any]any)
 
 	err := yaml.Unmarshal([]byte(defaultConfig), &kubeletConfig)
 	if err != nil {

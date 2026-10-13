@@ -27,7 +27,6 @@ const (
 	retryTimeLimit              = 20
 	secretString                = "<secret>"
 	defaultLocation             = hcloudLocationEUHelsinki
-	defaultDatacenter           = hcloudLocationEUHelsinki + "-dc2"
 	hcloudLocationEUFalkenstein = "fsn1"
 	hcloudLocationEUNuremberg   = "nbg1"
 	hcloudLocationEUHelsinki    = "hel1"

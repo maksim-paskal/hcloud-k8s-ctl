@@ -52,7 +52,8 @@ func NewApplicationAPI(ctx context.Context) (*ApplicationAPI, error) {
 		hcloudClient: hcloud.NewClient(hcloud.WithToken(config.Get().HetznerToken)),
 	}
 
-	if err := api.validateConfig(ctx); err != nil {
+	err := api.validateConfig(ctx)
+	if err != nil {
 		return &api, err
 	}
 
@@ -71,15 +72,6 @@ func (api *ApplicationAPI) validateConfig(ctx context.Context) error {
 
 	if location == nil {
 		return errors.Wrap(errLocationNotFound, config.Get().Location)
-	}
-
-	datacenter, _, err := api.hcloudClient.Datacenter.Get(ctx, config.Get().Datacenter)
-	if err != nil {
-		return errors.Wrap(err, "hcloudClient.Datacenter.Get")
-	}
-
-	if datacenter == nil {
-		return errors.Wrap(errDatacenterNotFound, config.Get().Datacenter)
 	}
 
 	return nil
@@ -225,7 +217,7 @@ func (api *ApplicationAPI) joinToMasterNodes(ctx context.Context, server string)
 	return nil
 }
 
-func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool) error { //nolint:cyclop
+func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool) error { //nolint:cyclop,funlen
 	log.Info("Executing postInstall...")
 
 	serverName := fmt.Sprintf(config.Get().MasterServers.NamePattern, 1)
@@ -257,7 +249,8 @@ func (api *ApplicationAPI) postInstall(ctx context.Context, copyNewScripts bool)
 		}
 
 		if copyNewScripts {
-			if err = api.downloadNewScripts(serverName, serverIP); err != nil {
+			err = api.downloadNewScripts(serverName, serverIP)
+			if err != nil {
 				log.WithError(err).Fatal()
 			}
 		}
@@ -400,13 +393,13 @@ func (api *ApplicationAPI) createLoadBalancer(ctx context.Context) error {
 		HealthCheck: &hcloud.LoadBalancerCreateOptsServiceHealthCheck{
 			Protocol: hcloud.LoadBalancerServiceProtocolHTTP,
 			Port:     &ListenPort,
-			Interval: hcloud.Ptr(hcloudLoadBalancerInterval),
-			Timeout:  hcloud.Ptr(hcloudLoadBalancerTimeout),
-			Retries:  hcloud.Ptr(hcloudLoadBalancerRetries),
+			Interval: new(hcloudLoadBalancerInterval),
+			Timeout:  new(hcloudLoadBalancerTimeout),
+			Retries:  new(hcloudLoadBalancerRetries),
 			HTTP: &hcloud.LoadBalancerCreateOptsServiceHealthCheckHTTP{
-				Path:        hcloud.Ptr("/healthz"),
+				Path:        new("/healthz"),
 				StatusCodes: []string{"2??"},
-				TLS:         hcloud.Ptr(true),
+				TLS:         new(true),
 			},
 		},
 	}
@@ -471,9 +464,9 @@ func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:fu
 		return errors.Wrap(err, "failed to get ssh key")
 	}
 
-	k8sDatacenter, _, err := api.hcloudClient.Datacenter.Get(ctx, config.Get().Datacenter)
+	k8sLocation, _, err := api.hcloudClient.Location.Get(ctx, config.Get().Location)
 	if err != nil {
-		return errors.Wrap(err, "failed to get datacenter")
+		return errors.Wrap(err, "failed to get location")
 	}
 
 	startAfterCreate := true
@@ -505,7 +498,7 @@ func (api *ApplicationAPI) createServer(ctx context.Context) error { //nolint:fu
 			Networks:         []*hcloud.Network{k8sNetwork},
 			SSHKeys:          []*hcloud.SSHKey{k8sSSHKey},
 			Labels:           config.Get().MasterServers.Labels,
-			Datacenter:       k8sDatacenter,
+			Location:         k8sLocation,
 			StartAfterCreate: &startAfterCreate,
 		}
 
@@ -705,6 +698,7 @@ func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string
 	defer session.Close()
 
 	var stdout, stderr bytes.Buffer
+
 	session.Stdout = &stdout
 	session.Stderr = &stderr
 
@@ -723,15 +717,9 @@ func (api *ApplicationAPI) execCommand(ipAddress string, command string) (string
 }
 
 func (api *ApplicationAPI) ListConfigurations(ctx context.Context) {
-	type DatacentersType struct {
-		Location string
-		Name     string
-	}
-
 	type ResultType struct {
-		Locations   []string
-		Datacenters []DatacentersType
-		ServerType  []string
+		Locations  []string
+		ServerType []string
 	}
 
 	result := ResultType{}
@@ -745,18 +733,6 @@ func (api *ApplicationAPI) ListConfigurations(ctx context.Context) {
 
 	for _, location := range locations {
 		result.Locations = append(result.Locations, location.Name)
-	}
-
-	datacenters, err := api.hcloudClient.Datacenter.All(ctx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, datacenter := range datacenters {
-		result.Datacenters = append(result.Datacenters, DatacentersType{
-			Name:     datacenter.Name,
-			Location: datacenter.Location.Name,
-		})
 	}
 
 	servertypes, err := api.hcloudClient.ServerType.All(ctx)
@@ -788,7 +764,8 @@ func (api *ApplicationAPI) getDeploymentValues() string {
 }
 
 func (api *ApplicationAPI) PatchClusterDeployment(ctx context.Context) error {
-	if err := api.postInstall(ctx, true); err != nil {
+	err := api.postInstall(ctx, true)
+	if err != nil {
 		return errors.Wrap(err, "error in patching cluster")
 	}
 
@@ -801,10 +778,8 @@ func (api *ApplicationAPI) listServers(ctx context.Context, labelSelector string
 	servers := make([]*hcloud.Server, 0)
 
 	opts := hcloud.ServerListOpts{
-		ListOpts: hcloud.ListOpts{
-			Page:          1,
-			LabelSelector: labelSelector,
-		},
+		Page:          1,
+		LabelSelector: labelSelector,
 	}
 
 	for ctx.Err() == nil {
@@ -817,7 +792,7 @@ func (api *ApplicationAPI) listServers(ctx context.Context, labelSelector string
 			break
 		}
 
-		opts.ListOpts.Page++
+		opts.Page++
 
 		servers = append(servers, page...)
 	}
@@ -873,6 +848,12 @@ func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, comman
 
 	wg.Add(len(allServers))
 
+	setStatus := func(serverName string, status string) {
+		mutex.Lock()
+		adhocStatus[serverName] = status
+		mutex.Unlock()
+	}
+
 	log.Info("Start executing command on selected nodes")
 
 	for _, server := range allServers {
@@ -884,13 +865,14 @@ func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, comman
 			serverIP, err := server.PublicNet.IPv4.IP.MarshalText()
 			if err != nil {
 				log.WithError(err).Error("can not get server IP")
-				adhocStatus[server.Name] = err.Error()
+				setStatus(server.Name, err.Error())
 
 				return
 			}
 
 			if copyNewScripts {
-				if err = api.downloadNewScripts(server.Name, string(serverIP)); err != nil {
+				err = api.downloadNewScripts(server.Name, string(serverIP))
+				if err != nil {
 					log.WithError(err).Fatal()
 				}
 			}
@@ -898,16 +880,14 @@ func (api *ApplicationAPI) ExecuteAdHoc(ctx context.Context, user string, comman
 			stdout, stderr, err := api.execCommand(string(serverIP), command)
 			if err != nil {
 				log.WithError(err).Error(stderr)
-				adhocStatus[server.Name] = err.Error()
+				setStatus(server.Name, err.Error())
 
 				return
 			}
 
 			log.Infof("stdout=%s,stderr=%s", stdout, stderr)
 
-			mutex.Lock()
-			adhocStatus[server.Name] = "ok"
-			mutex.Unlock()
+			setStatus(server.Name, "ok")
 		}(server)
 	}
 
@@ -962,7 +942,8 @@ func (api *ApplicationAPI) UpgradeControlPlane(ctx context.Context) {
 			log.WithError(err).Fatal()
 		}
 
-		if err = api.downloadNewScripts(serverName, serverIP); err != nil {
+		err = api.downloadNewScripts(serverName, serverIP)
+		if err != nil {
 			log.WithError(err).Fatal()
 		}
 
@@ -998,25 +979,25 @@ func (api *ApplicationAPI) CreateFirewall(ctx context.Context, createControlPlan
 			Direction:      hcloud.FirewallRuleDirectionIn,
 			SourceIPs:      []net.IPNet{*anyIPv4, *anyIPv6},
 			DestinationIPs: []net.IPNet{},
-			Protocol:       "tcp",
-			Port:           hcloud.Ptr("22"),
-			Description:    hcloud.Ptr("SSH to server"),
+			Protocol:       hcloud.FirewallRuleProtocolTCP,
+			Port:           new("22"),
+			Description:    new("SSH to server"),
 		},
 		{
 			Direction:      hcloud.FirewallRuleDirectionIn,
 			SourceIPs:      []net.IPNet{*clusterNetwork},
 			DestinationIPs: []net.IPNet{},
-			Protocol:       "udp",
-			Port:           hcloud.Ptr("8285"),
-			Description:    hcloud.Ptr("flannel overlay network - udp backend"),
+			Protocol:       hcloud.FirewallRuleProtocolUDP,
+			Port:           new("8285"),
+			Description:    new("flannel overlay network - udp backend"),
 		},
 		{
 			Direction:      hcloud.FirewallRuleDirectionIn,
 			SourceIPs:      []net.IPNet{*clusterNetwork},
 			DestinationIPs: []net.IPNet{},
-			Protocol:       "udp",
-			Port:           hcloud.Ptr("8472"),
-			Description:    hcloud.Ptr("flannel overlay network - vxlan backend"),
+			Protocol:       hcloud.FirewallRuleProtocolUDP,
+			Port:           new("8472"),
+			Description:    new("flannel overlay network - vxlan backend"),
 		},
 	}
 
@@ -1039,41 +1020,41 @@ func (api *ApplicationAPI) CreateFirewall(ctx context.Context, createControlPlan
 				Direction:      hcloud.FirewallRuleDirectionIn,
 				SourceIPs:      []net.IPNet{*anyIPv4, *anyIPv6}, // flannel do not start if only clusternetwork
 				DestinationIPs: []net.IPNet{},
-				Protocol:       "tcp",
-				Port:           hcloud.Ptr("6443"),
-				Description:    hcloud.Ptr("Kubernetes API server"),
+				Protocol:       hcloud.FirewallRuleProtocolTCP,
+				Port:           new("6443"),
+				Description:    new("Kubernetes API server"),
 			},
 			{
 				Direction:      hcloud.FirewallRuleDirectionIn,
 				SourceIPs:      []net.IPNet{*anyIPv4, *anyIPv6}, // other master nodes can not connect if only clusternetwork
 				DestinationIPs: []net.IPNet{},
-				Protocol:       "tcp",
-				Port:           hcloud.Ptr("2379-2380"),
-				Description:    hcloud.Ptr("etcd server client API"),
+				Protocol:       hcloud.FirewallRuleProtocolTCP,
+				Port:           new("2379-2380"),
+				Description:    new("etcd server client API"),
 			},
 			{
 				Direction:      hcloud.FirewallRuleDirectionIn,
 				SourceIPs:      []net.IPNet{*clusterNetwork},
 				DestinationIPs: []net.IPNet{},
-				Protocol:       "tcp",
-				Port:           hcloud.Ptr("10250"),
-				Description:    hcloud.Ptr("Kubelet API"),
+				Protocol:       hcloud.FirewallRuleProtocolTCP,
+				Port:           new("10250"),
+				Description:    new("Kubelet API"),
 			},
 			{
 				Direction:      hcloud.FirewallRuleDirectionIn,
 				SourceIPs:      []net.IPNet{*clusterNetwork},
 				DestinationIPs: []net.IPNet{},
-				Protocol:       "tcp",
-				Port:           hcloud.Ptr("10259"),
-				Description:    hcloud.Ptr("kube-scheduler"),
+				Protocol:       hcloud.FirewallRuleProtocolTCP,
+				Port:           new("10259"),
+				Description:    new("kube-scheduler"),
 			},
 			{
 				Direction:      hcloud.FirewallRuleDirectionIn,
 				SourceIPs:      []net.IPNet{*clusterNetwork},
 				DestinationIPs: []net.IPNet{},
-				Protocol:       "tcp",
-				Port:           hcloud.Ptr("10257"),
-				Description:    hcloud.Ptr("kube-controller-manager"),
+				Protocol:       hcloud.FirewallRuleProtocolTCP,
+				Port:           new("10257"),
+				Description:    new("kube-controller-manager"),
 			},
 		}...),
 	}
@@ -1096,17 +1077,17 @@ func (api *ApplicationAPI) CreateFirewall(ctx context.Context, createControlPlan
 				Direction:      hcloud.FirewallRuleDirectionIn,
 				SourceIPs:      []net.IPNet{*clusterNetwork},
 				DestinationIPs: []net.IPNet{},
-				Protocol:       "tcp",
-				Port:           hcloud.Ptr("10250"),
-				Description:    hcloud.Ptr("Kubelet API"),
+				Protocol:       hcloud.FirewallRuleProtocolTCP,
+				Port:           new("10250"),
+				Description:    new("Kubelet API"),
 			},
 			{
 				Direction:      hcloud.FirewallRuleDirectionIn,
 				SourceIPs:      []net.IPNet{*clusterNetwork},
 				DestinationIPs: []net.IPNet{},
-				Protocol:       "tcp",
-				Port:           hcloud.Ptr("30000-32767"),
-				Description:    hcloud.Ptr("NodePort Services"),
+				Protocol:       hcloud.FirewallRuleProtocolTCP,
+				Port:           new("30000-32767"),
+				Description:    new("NodePort Services"),
 			},
 		}...),
 	}

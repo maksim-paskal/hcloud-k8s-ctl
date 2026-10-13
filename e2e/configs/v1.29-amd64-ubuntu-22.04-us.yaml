@@ -2,7 +2,6 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 networkZone: us-east
 location: ash
-datacenter: ash-dc1
 masterServers:
   servertype: cpx21
 serverComponents:
