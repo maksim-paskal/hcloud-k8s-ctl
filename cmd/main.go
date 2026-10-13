@@ -62,7 +62,8 @@ func main() { //nolint:cyclop,funlen
 	log.SetLevel(logLevel)
 
 	if *checkNewVersion {
-		if err := version.CheckLatest(ctx, gitVersion); err != nil {
+		err := version.CheckLatest(ctx, gitVersion)
+		if err != nil {
 			if strings.Contains(err.Error(), "new version available") {
 				log.Fatal(err)
 			}

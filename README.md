@@ -138,7 +138,6 @@ serverComponents:
 masterCount: 3
 networkZone: us-east
 location: ash
-datacenter: ash-dc1
 masterServers:
   servertype: cpx21
 serverComponents:
@@ -236,7 +235,6 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 networkZone: us-east
 location: ash
-datacenter: ash-dc1
 masterServers:
   servertype: cpx21
 serverComponents:
@@ -354,7 +352,6 @@ ipRange: "10.0.0.0/16"
 masterCount: 3
 networkZone: us-east
 location: ash
-datacenter: ash-dc1
 masterServers:
   servertype: cpx21
 serverComponents:
@@ -428,7 +425,7 @@ kubectl get no
 hcloud-k8s-ctl -action=patch-cluster
 ```
 
-## List available location/datacenter/servertype at Hezner
+## List available location/servertype at Hezner
 
 ```bash
 hcloud-k8s-ctl -action=list-configurations

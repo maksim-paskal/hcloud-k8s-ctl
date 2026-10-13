@@ -22,7 +22,8 @@ import (
 )
 
 func main() {
-	if err := updateReadme(); err != nil {
+	err := updateReadme()
+	if err != nil {
 		panic(err)
 	}
 }

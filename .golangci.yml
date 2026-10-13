@@ -1,14 +1,41 @@
+version: "2"
 run:
   timeout: 5m
+linters:
+  default: all
+  disable:
+    - depguard
+    - exhaustruct
+    - exhaustruct_v5
+    - funcorder
+    - gochecknoglobals
+    - godoclint
+    - mnd
+    - musttag
+    - noinlineerr
+    - varnamelen
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
 issues:
   fix: true
-linters:
-  enable-all: true
-  disable:
-  - execinquery
-  - exhaustruct
-  - varnamelen
-  - musttag
-  - depguard
-  - gochecknoglobals
-  - gomnd
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

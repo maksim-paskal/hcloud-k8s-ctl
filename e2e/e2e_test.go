@@ -35,6 +35,8 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+const enabledKey = "enabled"
+
 func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 	t.Log("Starting e2e tests...")
 
@@ -92,16 +94,16 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 				t.Fatal(err)
 			}
 
-			extraDeployments := make(map[interface{}]interface{})
-			extraDeployments["nfs"] = map[interface{}]interface{}{
-				"server": map[interface{}]interface{}{
-					"enabled": true,
+			extraDeployments := make(map[any]any)
+			extraDeployments["nfs"] = map[any]any{
+				"server": map[any]any{
+					enabledKey: true,
 				},
 			}
 
-			extraDeployments["registry"] = map[interface{}]interface{}{
-				"enabled": true,
-				"service": map[interface{}]interface{}{
+			extraDeployments["registry"] = map[any]any{
+				enabledKey: true,
+				"service": map[any]any{
 					"type": "LoadBalancer",
 				},
 			}
@@ -135,12 +137,12 @@ func Test(t *testing.T) { //nolint:funlen,paralleltest,cyclop
 			}
 
 			// add additional deployments, to test patching
-			extraDeployments["nfs"] = map[interface{}]interface{}{
-				"server": map[interface{}]interface{}{
-					"enabled": true,
+			extraDeployments["nfs"] = map[any]any{
+				"server": map[any]any{
+					enabledKey: true,
 				},
-				"nfs-subdir-external-provisioner": map[interface{}]interface{}{
-					"enabled": true,
+				"nfs-subdir-external-provisioner": map[any]any{
+					enabledKey: true,
 				},
 			}
 
