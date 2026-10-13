@@ -85,35 +85,45 @@ kubelet:
   staticPodPath: /etc/kubernetes/manifests
 cluster-autoscaler:
   autoscalingGroups:
-    - name: cpx11-fsn1
+    - name: cax11-fsn1
       minSize: 0
       maxSize: 20
-      instanceType: cpx11
+      instanceType: cax11
       region: fsn1
-    - name: cpx21-fsn1
+    - name: cax21-fsn1
       minSize: 0
       maxSize: 20
-      instanceType: cpx21
+      instanceType: cax21
       region: fsn1
-    - name: cpx31-fsn1
+    - name: ccx13-fsn1
       minSize: 0
       maxSize: 20
-      instanceType: cpx31
+      instanceType: ccx13
       region: fsn1
-    - name: cpx41-fsn1
+    - name: ccx23-fsn1
       minSize: 0
       maxSize: 20
-      instanceType: cpx41
+      instanceType: ccx23
       region: fsn1
-    - name: cpx51-fsn1
+    - name: ccx33-fsn1
       minSize: 0
       maxSize: 20
-      instanceType: cpx51
+      instanceType: ccx33
       region: fsn1
-    - name: cpx12-fsn1
+    - name: ccx43-fsn1
       minSize: 0
       maxSize: 20
-      instanceType: cpx12
+      instanceType: ccx43
+      region: fsn1
+    - name: ccx53-fsn1
+      minSize: 0
+      maxSize: 20
+      instanceType: ccx53
+      region: fsn1
+    - name: ccx63-fsn1
+      minSize: 0
+      maxSize: 20
+      instanceType: ccx63
       region: fsn1
     - name: cpx22-fsn1
       minSize: 0
@@ -140,55 +150,35 @@ cluster-autoscaler:
       maxSize: 20
       instanceType: cpx62
       region: fsn1
-    - name: cx23-fsn1
+    - name: ccx13-nbg1
       minSize: 0
       maxSize: 20
-      instanceType: cx23
-      region: fsn1
-    - name: cx33-fsn1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx33
-      region: fsn1
-    - name: cx43-fsn1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx43
-      region: fsn1
-    - name: cx53-fsn1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx53
-      region: fsn1
-    - name: cpx11-nbg1
-      minSize: 0
-      maxSize: 20
-      instanceType: cpx11
+      instanceType: ccx13
       region: nbg1
-    - name: cpx21-nbg1
+    - name: ccx23-nbg1
       minSize: 0
       maxSize: 20
-      instanceType: cpx21
+      instanceType: ccx23
       region: nbg1
-    - name: cpx31-nbg1
+    - name: ccx33-nbg1
       minSize: 0
       maxSize: 20
-      instanceType: cpx31
+      instanceType: ccx33
       region: nbg1
-    - name: cpx41-nbg1
+    - name: ccx43-nbg1
       minSize: 0
       maxSize: 20
-      instanceType: cpx41
+      instanceType: ccx43
       region: nbg1
-    - name: cpx51-nbg1
+    - name: ccx53-nbg1
       minSize: 0
       maxSize: 20
-      instanceType: cpx51
+      instanceType: ccx53
       region: nbg1
-    - name: cpx12-nbg1
+    - name: ccx63-nbg1
       minSize: 0
       maxSize: 20
-      instanceType: cpx12
+      instanceType: ccx63
       region: nbg1
     - name: cpx22-nbg1
       minSize: 0
@@ -200,70 +190,55 @@ cluster-autoscaler:
       maxSize: 20
       instanceType: cpx32
       region: nbg1
-    - name: cpx42-nbg1
+    - name: cax11-hel1
       minSize: 0
       maxSize: 20
-      instanceType: cpx42
-      region: nbg1
-    - name: cpx52-nbg1
-      minSize: 0
-      maxSize: 20
-      instanceType: cpx52
-      region: nbg1
-    - name: cpx62-nbg1
-      minSize: 0
-      maxSize: 20
-      instanceType: cpx62
-      region: nbg1
-    - name: cx23-nbg1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx23
-      region: nbg1
-    - name: cx33-nbg1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx33
-      region: nbg1
-    - name: cx43-nbg1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx43
-      region: nbg1
-    - name: cx53-nbg1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx53
-      region: nbg1
-    - name: cpx11-hel1
-      minSize: 0
-      maxSize: 20
-      instanceType: cpx11
+      instanceType: cax11
       region: hel1
-    - name: cpx21-hel1
+    - name: cax21-hel1
       minSize: 0
       maxSize: 20
-      instanceType: cpx21
+      instanceType: cax21
       region: hel1
-    - name: cpx31-hel1
+    - name: cax31-hel1
       minSize: 0
       maxSize: 20
-      instanceType: cpx31
+      instanceType: cax31
       region: hel1
-    - name: cpx41-hel1
+    - name: cax41-hel1
       minSize: 0
       maxSize: 20
-      instanceType: cpx41
+      instanceType: cax41
       region: hel1
-    - name: cpx51-hel1
+    - name: ccx13-hel1
       minSize: 0
       maxSize: 20
-      instanceType: cpx51
+      instanceType: ccx13
       region: hel1
-    - name: cpx12-hel1
+    - name: ccx23-hel1
       minSize: 0
       maxSize: 20
-      instanceType: cpx12
+      instanceType: ccx23
+      region: hel1
+    - name: ccx33-hel1
+      minSize: 0
+      maxSize: 20
+      instanceType: ccx33
+      region: hel1
+    - name: ccx43-hel1
+      minSize: 0
+      maxSize: 20
+      instanceType: ccx43
+      region: hel1
+    - name: ccx53-hel1
+      minSize: 0
+      maxSize: 20
+      instanceType: ccx53
+      region: hel1
+    - name: ccx63-hel1
+      minSize: 0
+      maxSize: 20
+      instanceType: ccx63
       region: hel1
     - name: cpx22-hel1
       minSize: 0
@@ -289,24 +264,4 @@ cluster-autoscaler:
       minSize: 0
       maxSize: 20
       instanceType: cpx62
-      region: hel1
-    - name: cx23-hel1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx23
-      region: hel1
-    - name: cx33-hel1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx33
-      region: hel1
-    - name: cx43-hel1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx43
-      region: hel1
-    - name: cx53-hel1
-      minSize: 0
-      maxSize: 20
-      instanceType: cx53
       region: hel1
