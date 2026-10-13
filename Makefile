@@ -47,7 +47,7 @@ upgrade-workers-kernel: # upgrade kernel and restart worker node
 run:
 	go run -race ./cmd -config=$(config) -action=$(action) -log.level=DEBUG $(args)
 build:
-	go run github.com/goreleaser/goreleaser@latest build --clean --skip=validate
+	go run github.com/goreleaser/goreleaser/v2@latest build --clean --skip=validate
 apply-yaml:
 	kubectl apply -f ./scripts
 apply-test:
@@ -62,7 +62,7 @@ test-kubernetes-yaml:
 	helm template ./scripts/chart --values=$(fullConfig) | kubectl apply --dry-run=server --validate=true -f -
 	helm template ./examples/charts/test --values=$(fullConfig) | kubectl apply --dry-run=server --validate=true -f -
 install:
-	go run github.com/goreleaser/goreleaser@latest build \
+	go run github.com/goreleaser/goreleaser/v2@latest build \
 	--single-target \
 	--clean \
 	--snapshot \
