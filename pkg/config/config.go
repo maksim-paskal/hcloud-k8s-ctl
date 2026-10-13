@@ -21,12 +21,9 @@ import (
 	"os/user"
 	"path/filepath"
 	"regexp"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
-	"github.com/maksim-paskal/hcloud-k8s-ctl/pkg/utils"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -93,14 +90,6 @@ type serverComponents struct {
 	Containerd serverComponentContainerd
 }
 
-type clusterAutoscalingGroup struct {
-	Name         string `yaml:"name"`
-	MinSize      int    `yaml:"minSize"`
-	MaxSize      int    `yaml:"maxSize"`
-	InstanceType string `yaml:"instanceType"`
-	Region       string `yaml:"region"`
-}
-
 func getDefaultMasterServersInitParams() masterServersInitParams {
 	branch := "main"
 
@@ -111,47 +100,6 @@ func getDefaultMasterServersInitParams() masterServersInitParams {
 	return masterServersInitParams{
 		TarGz:  fmt.Sprintf("https://github.com/maksim-paskal/hcloud-k8s-ctl/archive/refs/heads/%s.tar.gz", branch),
 		Folder: "hcloud-k8s-ctl-" + branch,
-	}
-}
-
-func getDefaultClusterAutoscaler() map[any]any {
-	defaultLocations := []string{
-		hcloudLocationEUFalkenstein,
-		hcloudLocationEUNuremberg,
-		hcloudLocationEUHelsinki,
-	}
-	defaultServers := strings.Split(hcloudInstanceTypes, "\n")
-
-	defaultServers = utils.Filter(defaultServers, func(s string) bool {
-		return strings.HasPrefix(s, "cpx") || strings.HasPrefix(s, "cx")
-	})
-
-	if instances := os.Getenv("AUTOSCALER_INSTANCES"); len(instances) > 0 {
-		defaultServers = append(defaultServers, strings.Split(instances, ",")...)
-	}
-
-	result := make([]*clusterAutoscalingGroup, 0, len(defaultLocations)*len(defaultServers))
-
-	workersMaxSize := 20
-
-	if workersCountEnv, err := strconv.Atoi(os.Getenv("AUTOSCALER_WORKERS_MAX")); err == nil && workersCountEnv > 0 {
-		workersMaxSize = workersCountEnv
-	}
-
-	for _, location := range defaultLocations {
-		for _, server := range defaultServers {
-			result = append(result, &clusterAutoscalingGroup{
-				Name:         fmt.Sprintf("%s-%s", strings.TrimSpace(server), strings.TrimSpace(location)),
-				MinSize:      0,
-				MaxSize:      workersMaxSize,
-				InstanceType: server,
-				Region:       location,
-			})
-		}
-	}
-
-	return map[any]any{
-		"autoscalingGroups": result,
 	}
 }
 
@@ -260,7 +208,7 @@ func defaultConfig() Type {
 			DestinationPort:  loadBalancerDefaultPort,
 		},
 		Deployments:       emptyStruct{},
-		ClusterAutoscaler: getDefaultClusterAutoscaler(),
+		ClusterAutoscaler: make(map[any]any),
 		Kubelet:           getDefaultKubeletConfig(),
 	}
 }
@@ -329,6 +277,10 @@ func Check() error {
 
 func Get() *Type {
 	return &config
+}
+
+func SetClusterAutoscaler(param map[any]any) {
+	config.ClusterAutoscaler = param
 }
 
 func hideSensitiveData(out []byte, sensitive string) []byte {

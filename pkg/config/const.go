@@ -13,21 +13,14 @@ limitations under the License.
 package config
 
 import (
-	_ "embed"
 	"time"
 )
 
-//go:embed instance-type.txt
-var hcloudInstanceTypes string
-
 const (
-	masterServersCount          = 3
-	loadBalancerDefaultPort     = 6443
-	waitTimeInRetry             = 3 * time.Second
-	retryTimeLimit              = 20
-	secretString                = "<secret>"
-	defaultLocation             = hcloudLocationEUHelsinki
-	hcloudLocationEUFalkenstein = "fsn1"
-	hcloudLocationEUNuremberg   = "nbg1"
-	hcloudLocationEUHelsinki    = "hel1"
+	masterServersCount      = 3
+	loadBalancerDefaultPort = 6443
+	waitTimeInRetry         = 3 * time.Second
+	retryTimeLimit          = 20
+	secretString            = "<secret>"
+	defaultLocation         = "hel1"
 )

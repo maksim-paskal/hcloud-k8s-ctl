@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/hetznercloud/hcloud-go/v2/hcloud"
@@ -32,10 +34,11 @@ import (
 )
 
 const (
-	nodeGroupSelector = "hcloud/node-group"
-	debugStdout       = "stdout=%s"
-	debugStderr       = "stderr=%s"
-	executingCommand  = "Executing command..."
+	nodeGroupSelector           = "hcloud/node-group"
+	debugStdout                 = "stdout=%s"
+	debugStderr                 = "stderr=%s"
+	executingCommand            = "Executing command..."
+	autoscalerDefaultWorkersMax = 20
 )
 
 type ApplicationAPI struct {
@@ -57,9 +60,122 @@ func NewApplicationAPI(ctx context.Context) (*ApplicationAPI, error) {
 		return &api, err
 	}
 
+	err = api.updateAutoscalingGroups(ctx)
+	if err != nil {
+		return &api, err
+	}
+
 	api.sshRootUser = config.Get().ServerComponents.Ubuntu.UserName
 
 	return &api, nil
+}
+
+type clusterAutoscalingGroup struct {
+	Name         string `yaml:"name"`
+	MinSize      int    `yaml:"minSize"`
+	MaxSize      int    `yaml:"maxSize"`
+	InstanceType string `yaml:"instanceType"`
+	Region       string `yaml:"region"`
+}
+
+// serverOfferedInLocation reports whether server is structurally sold in locationName.
+// It ignores the live Available stock flag: Hetzner's popular server types (e.g. cx/cax)
+// routinely sell out and restock per-location, and cluster-autoscaler already copes with a
+// provisioning failure for one node group by falling back to another — but only if that
+// group was generated in the first place.
+func serverOfferedInLocation(server *hcloud.ServerType, locationName string) bool {
+	for _, serverLocation := range server.Locations {
+		if serverLocation.Location != nil && serverLocation.Location.Name == locationName {
+			return true
+		}
+	}
+
+	return false
+}
+
+// autoscalerWorkersMax returns the AUTOSCALER_WORKERS_MAX override, or autoscalerDefaultWorkersMax if unset/invalid.
+func autoscalerWorkersMax() int {
+	if workersMaxEnv, err := strconv.Atoi(os.Getenv("AUTOSCALER_WORKERS_MAX")); err == nil && workersMaxEnv > 0 {
+		return workersMaxEnv
+	}
+
+	return autoscalerDefaultWorkersMax
+}
+
+// autoscalerAllowedInstances returns the set of instance types from AUTOSCALER_INSTANCES, empty if unset.
+func autoscalerAllowedInstances() map[string]bool {
+	allowedInstances := make(map[string]bool)
+
+	if instances := os.Getenv("AUTOSCALER_INSTANCES"); len(instances) > 0 {
+		for instance := range strings.SplitSeq(instances, ",") {
+			allowedInstances[strings.TrimSpace(instance)] = true
+		}
+	}
+
+	return allowedInstances
+}
+
+// isAutoscalerCandidate reports whether server should be considered for the autoscaler node groups.
+// If allowedInstances is non-empty, it is an explicit allow-list (AUTOSCALER_INSTANCES); otherwise
+// server types with at least 2 cores are used by default.
+func isAutoscalerCandidate(server *hcloud.ServerType, allowedInstances map[string]bool) bool {
+	if len(allowedInstances) > 0 {
+		return allowedInstances[server.Name]
+	}
+
+	return server.Cores >= 2 //nolint:mnd
+}
+
+func (api *ApplicationAPI) updateAutoscalingGroups(ctx context.Context) error {
+	// if autoscalingGroups are already defined, skip updating them
+	if _, ok := config.Get().ClusterAutoscaler["autoscalingGroups"]; ok {
+		return nil
+	}
+
+	locations, err := api.hcloudClient.Location.All(ctx)
+	if err != nil {
+		return errors.Wrap(err, "error getting locations")
+	}
+
+	serverTypes, err := api.hcloudClient.ServerType.All(ctx)
+	if err != nil {
+		return errors.Wrap(err, "error getting server types")
+	}
+
+	maxSize := autoscalerWorkersMax()
+	allowedInstances := autoscalerAllowedInstances()
+	result := make([]*clusterAutoscalingGroup, 0)
+
+	for _, location := range locations {
+		if location.NetworkZone != config.Get().NetworkZone {
+			continue
+		}
+
+		for _, server := range serverTypes {
+			if !isAutoscalerCandidate(server, allowedInstances) {
+				continue
+			}
+
+			if !serverOfferedInLocation(server, location.Name) {
+				continue
+			}
+
+			result = append(result, &clusterAutoscalingGroup{
+				Name:         fmt.Sprintf("%s-%s", strings.TrimSpace(server.Name), strings.TrimSpace(location.Name)),
+				MinSize:      0,
+				MaxSize:      maxSize,
+				InstanceType: server.Name,
+				Region:       location.Name,
+			})
+		}
+	}
+
+	clusterAutoscaler := config.Get().ClusterAutoscaler
+	clusterAutoscaler["autoscalingGroups"] = result
+
+	config.SetClusterAutoscaler(clusterAutoscaler)
+
+	return nil
 }
 
 func (api *ApplicationAPI) validateConfig(ctx context.Context) error {
